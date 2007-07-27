@@ -1,5 +1,6 @@
 SUBDIRS = \
 	include \
+	scripts \
 	src
 
 EXTRA_DIST = \

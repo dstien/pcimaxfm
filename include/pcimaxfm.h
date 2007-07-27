@@ -38,9 +38,9 @@
 #define PCIMAXFM_I2C_ADDR_WRITE_FLAG	(1 << 7)
 
 #define PCIMAXFM_I2C_DELAY_USECS	100
-#define PCIMAXFM_I2C_MSBIT		(1 << 7)
-#define PCIMAXFM_I2C_GET_MSB(value)	((value & 0xff00) >> 8)
-#define PCIMAXFM_I2C_GET_LSB(value)	(value & 0x00ff)
+
+#define PCIMAXFM_GET_MSB(value)		((value & 0xff00) >> 8)
+#define PCIMAXFM_GET_LSB(value)		(value & 0x00ff)
 
 #define PCIMAXFM_FREQ_MIN		1720 /*  86.00 MHz */
 #define PCIMAXFM_FREQ_MAX		2160 /* 108.00 MHz */

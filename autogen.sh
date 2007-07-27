@@ -44,7 +44,7 @@ check()
 run()
 {
 	echo "aclocal..."
-	aclocal
+	aclocal -I. -Iscripts
 
 	echo "autoheader..."
 	autoheader

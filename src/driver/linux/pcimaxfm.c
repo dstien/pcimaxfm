@@ -17,19 +17,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <config.h>
+#include <pcimaxfm.h>
+
 #include <linux/delay.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/pci.h>
 
-#include "config.h"
-#include "pcimaxfm.h"
-
 MODULE_LICENSE("GPL");
 MODULE_VERSION(PACKAGE_VERSION);
+MODULE_AUTHOR(PACKAGE_AUTHOR);
+MODULE_DESCRIPTION(PACKAGE_DESCRIPTION);
 
 u8 pcimaxfm_io_ctrl = 0;
-u8 pcimaxfm_io_val = 0;
+u8 pcimaxfm_io_val  = 0;
+
+int pcimaxfm_major = 0;
 
 int pcimaxfm_freq = PCIMAXFM_FREQ_NA;
 int pcimaxfm_power = PCIMAXFM_POWER_NA;
@@ -88,10 +92,10 @@ static void pcimaxfm_i2c_stop(void)
 
 static void pcimaxfm_i2c_write_byte(u8 value)
 {
-	int cur_bit;
+	int i;
 
-	for (cur_bit = 0; cur_bit < 8; cur_bit++) {
-		if (PCIMAXFM_I2C_MSBIT & (value << cur_bit))
+	for (i = 0; i < 8; i++) {
+		if (value & (1 << (7 - i)))
 			pcimaxfm_i2c_sda_set();
 		else
 			pcimaxfm_i2c_sda_clr();
@@ -134,19 +138,19 @@ static void pcimaxfm_write_freq_power(int freq, int power)
 	pcimaxfm_i2c_start();
 	pcimaxfm_i2c_write_byte(
 			PCIMAXFM_I2C_ADDR_PLL | PCIMAXFM_I2C_ADDR_WRITE_FLAG);
-	pcimaxfm_i2c_write_byte(PCIMAXFM_I2C_GET_MSB(pcimaxfm_freq));
-	pcimaxfm_i2c_write_byte(PCIMAXFM_I2C_GET_LSB(pcimaxfm_freq));
+	pcimaxfm_i2c_write_byte(PCIMAXFM_GET_MSB(pcimaxfm_freq));
+	pcimaxfm_i2c_write_byte(PCIMAXFM_GET_LSB(pcimaxfm_freq));
 	pcimaxfm_i2c_write_byte(192);
 	pcimaxfm_i2c_write_byte(pcimaxfm_power);
 	pcimaxfm_i2c_stop();
 
-	printk(KERN_NOTICE PACKAGE ": Frequency: %d Power: %d\n",
+	printk(KERN_DEBUG PACKAGE ": Frequency: %d Power: %d\n",
 			pcimaxfm_freq, pcimaxfm_power);
 }
 
 static void pcimaxfm_write_rds(char *parameter, char *value)
 {
-	printk(KERN_NOTICE PACKAGE ": RDS: %s = \"%s\"\n", parameter, value);
+	printk(KERN_DEBUG PACKAGE ": RDS: %s = \"%s\"\n", parameter, value);
 
 	pcimaxfm_i2c_start();
 	pcimaxfm_i2c_write_byte(
@@ -187,8 +191,7 @@ static int pcimaxfm_probe(struct pci_dev *dev, const struct pci_device_id *id)
 
 	pcimaxfm_iobase = pci_resource_start(dev, 0);
 
-	printk(KERN_ALERT PACKAGE ": pcimaxfm_iobase: 0x%lx)\n",
-			pcimaxfm_iobase);
+	printk(KERN_INFO PACKAGE ": pcimaxfm_iobase: %#lx\n", pcimaxfm_iobase);
 
 	if (!request_region(pcimaxfm_iobase, PCIMAXFM_REGION_LENGTH, PACKAGE)) {
 		printk(KERN_ERR PACKAGE ": I/O ports in use.\n");
@@ -225,31 +228,46 @@ static void pcimaxfm_remove(struct pci_dev *dev)
 
 static struct pci_device_id pcimaxfm_id_table[] = {
 	{
-		.vendor = PCIMAXFM_VENDOR,
-		.device = PCIMAXFM_DEVICE,
+		.vendor    = PCIMAXFM_VENDOR,
+		.device    = PCIMAXFM_DEVICE,
 		.subvendor = PCIMAXFM_SUBVENDOR,
 		.subdevice = PCIMAXFM_SUBDEVICE
 	}
 };
 
 static struct pci_driver pcimaxfm_driver = {
-	.name = PACKAGE,
+	.name     = PACKAGE,
 	.id_table = pcimaxfm_id_table,
-	.probe = pcimaxfm_probe,
-	.remove = pcimaxfm_remove
+	.probe	  = pcimaxfm_probe,
+	.remove   = pcimaxfm_remove
 };
 
 static int __init pcimaxfm_init(void)
 {
-	printk(KERN_ALERT PACKAGE ": pcimaxfm_init(void)\n");
+	int ret;
+	dev_t dev = MKDEV(pcimaxfm_major, 0);
 
-	return pci_register_driver(&pcimaxfm_driver);
+	if ((ret = pci_register_driver(&pcimaxfm_driver))) {
+		printk(KERN_ERR PACKAGE ": Couldn't register driver.\n");
+		return ret;
+	}
+
+	ret = alloc_chrdev_region(&dev, 0, 1, PACKAGE);
+	pcimaxfm_major = MAJOR(dev);
+
+	if (ret) {
+		printk(KERN_ERR PACKAGE
+			": Couldn't register char device (major %d).\n",
+			pcimaxfm_major);
+		return ret;
+	}
+
+	return 0;
 }
 
 static void __exit pcimaxfm_exit(void)
 {
-	printk(KERN_ALERT PACKAGE ": pcimaxfm_exit(void)\n");
-
+	unregister_chrdev_region(MKDEV(pcimaxfm_major, 0), 1);
 	pci_unregister_driver(&pcimaxfm_driver);
 }
 
