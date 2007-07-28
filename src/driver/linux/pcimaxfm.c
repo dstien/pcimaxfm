@@ -20,10 +20,17 @@
 #include <config.h>
 #include <pcimaxfm.h>
 
+#include <asm/uaccess.h>
+#include <linux/cdev.h>
 #include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/errno.h>
+#include <linux/fs.h>
 #include <linux/init.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/pci.h>
+#include <linux/types.h>
 
 MODULE_LICENSE("GPL");
 MODULE_VERSION(PACKAGE_VERSION);
@@ -33,12 +40,13 @@ MODULE_DESCRIPTION(PACKAGE_DESCRIPTION);
 u8 pcimaxfm_io_ctrl = 0;
 u8 pcimaxfm_io_val  = 0;
 
-int pcimaxfm_major = 0;
-
 int pcimaxfm_freq = PCIMAXFM_FREQ_NA;
 int pcimaxfm_power = PCIMAXFM_POWER_NA;
 
+int pcimaxfm_major = 0;
 unsigned long pcimaxfm_iobase;
+struct cdev *pcimaxfm_cdev;
+static struct class *pcimaxfm_class;
 
 static void pcimaxfm_i2c_sda_set(void)
 {
@@ -242,6 +250,56 @@ static struct pci_driver pcimaxfm_driver = {
 	.remove   = pcimaxfm_remove
 };
 
+static int pcimaxfm_open(struct inode *inode, struct file *filp)
+{
+	return 0;
+}
+
+static int pcimaxfm_release(struct inode *inode, struct file *filp)
+{
+	return 0;
+}
+
+static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
+		loff_t *f_pos)
+{
+	return 0;
+}
+
+static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
+		unsigned int cmd, unsigned long arg)
+{
+	int data;
+
+	switch (cmd) {
+		case PCIMAXFM_POWER_SET:
+			if (get_user(data, (int __user *)arg))
+				return -1;
+			
+			pcimaxfm_write_freq_power(pcimaxfm_freq, data);
+			break;
+
+		case PCIMAXFM_POWER_GET:
+			if (put_user(pcimaxfm_power, (int __user *)arg))
+				return -1;
+
+			break;
+
+		default:
+			return -ENOTTY;
+	}
+
+	return 0;
+}
+
+static struct file_operations pcimaxfm_fops = {
+	.owner   = THIS_MODULE,
+	.read    = pcimaxfm_read,
+	.ioctl   = pcimaxfm_ioctl,
+	.open    = pcimaxfm_open,
+	.release = pcimaxfm_release
+};
+
 static int __init pcimaxfm_init(void)
 {
 	int ret;
@@ -257,17 +315,61 @@ static int __init pcimaxfm_init(void)
 
 	if (ret) {
 		printk(KERN_ERR PACKAGE
-			": Couldn't register char device (major %d).\n",
+			": Couldn't allocate char device (major %d).\n",
 			pcimaxfm_major);
-		return ret;
+		goto fail_alloc_chrdev_region;
+	}
+
+	if (!(pcimaxfm_cdev = cdev_alloc())) {
+		printk(KERN_ERR PACKAGE ": Couldn't allocate cdev.\n");
+		ret = -1;
+		goto fail_cdev;
+	}
+	pcimaxfm_cdev->owner = THIS_MODULE;
+	pcimaxfm_cdev->ops = &pcimaxfm_fops;
+
+	if ((ret = cdev_add(pcimaxfm_cdev, dev, 1))) {
+		printk(KERN_ERR PACKAGE ": Couldn't add cdev pcimaxfm0.\n");
+		goto fail_cdev;
+	}
+
+	if (IS_ERR(pcimaxfm_class = class_create(THIS_MODULE, PACKAGE))) {
+		printk(KERN_ERR PACKAGE ": Couldn't create class.\n");
+		ret = -1;
+		goto fail_class_create;
+	}
+
+	if (IS_ERR(class_device_create(pcimaxfm_class, NULL, dev, NULL,
+					PACKAGE "%d", 0))) {
+		printk(KERN_ERR PACKAGE ": Couldn't create class device.\n");
+		ret = -1;
+		goto fail_class_device_create;
 	}
 
 	return 0;
+
+fail_class_device_create:
+	class_destroy(pcimaxfm_class);
+fail_class_create:
+	cdev_del(pcimaxfm_cdev);
+fail_cdev:
+	unregister_chrdev_region(dev, 1);
+fail_alloc_chrdev_region:
+	pci_unregister_driver(&pcimaxfm_driver);
+
+	return ret;
 }
 
 static void __exit pcimaxfm_exit(void)
 {
-	unregister_chrdev_region(MKDEV(pcimaxfm_major, 0), 1);
+	dev_t dev = MKDEV(pcimaxfm_major, 0);
+
+	class_device_destroy(pcimaxfm_class, dev);
+	class_destroy(pcimaxfm_class);
+
+	cdev_del(pcimaxfm_cdev);
+	unregister_chrdev_region(dev, 1);
+
 	pci_unregister_driver(&pcimaxfm_driver);
 }
 
