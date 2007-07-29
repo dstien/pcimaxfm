@@ -1,0 +1,2 @@
+# pcimaxfm
+KERNEL=="pcimaxfm[0-9]*",	GROUP="audio"

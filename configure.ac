@@ -15,7 +15,7 @@ AC_DEFINE(
   [Define the description of the package.]
 )
 
-AC_PROG_CC
+AC_PROG_CC()
 
 PCIMAXFM_PATH_LINUX_SOURCES()
 PCIMAXFM_PATH_LINUX_MODULE()

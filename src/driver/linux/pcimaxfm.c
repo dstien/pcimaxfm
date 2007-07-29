@@ -176,16 +176,20 @@ static void pcimaxfm_write_rds(char *parameter, char *value)
 	pcimaxfm_i2c_stop();
 }
 
-static void pcimaxfm_mono_set(void)
+static void pcimaxfm_stereo_set(int stereo)
 {
-	pcimaxfm_io_val |= PCIMAXFM_MONO;
+	if (stereo) {
+		pcimaxfm_io_val &= ~PCIMAXFM_MONO;
+	} else {
+		pcimaxfm_io_val |= PCIMAXFM_MONO;
+	}
+
 	outb(pcimaxfm_io_val, pcimaxfm_iobase + PCIMAXFM_OFFSET_VALUE);
 }
 
-static void pcimaxfm_mono_clr(void)
+static int pcimaxfm_stereo_get(void)
 {
-	pcimaxfm_io_val &= ~PCIMAXFM_MONO;
-	outb(pcimaxfm_io_val, pcimaxfm_iobase + PCIMAXFM_OFFSET_VALUE);
+	return ((pcimaxfm_io_val & PCIMAXFM_MONO) != PCIMAXFM_MONO);
 }
 
 static int pcimaxfm_probe(struct pci_dev *dev, const struct pci_device_id *id)
@@ -270,8 +274,21 @@ static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 		unsigned int cmd, unsigned long arg)
 {
 	int data;
+	struct pcimaxfm_rds_set rds;
 
 	switch (cmd) {
+		case PCIMAXFM_FREQ_SET:
+			if (get_user(data, (int __user *)arg))
+				return -1;
+
+			pcimaxfm_write_freq_power(data, pcimaxfm_power);
+			break;
+
+		case PCIMAXFM_FREQ_GET:
+			if (put_user(pcimaxfm_freq, (int __user *)arg))
+				return -1;
+			break;
+
 		case PCIMAXFM_POWER_SET:
 			if (get_user(data, (int __user *)arg))
 				return -1;
@@ -283,6 +300,28 @@ static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 			if (put_user(pcimaxfm_power, (int __user *)arg))
 				return -1;
 
+			break;
+
+		case PCIMAXFM_STEREO_SET:
+			if (get_user(data, (int __user *)arg))
+				return -1;
+
+			pcimaxfm_stereo_set(data);
+			break;
+
+		case PCIMAXFM_STEREO_GET:
+			if (put_user(pcimaxfm_stereo_get(), (int __user *)arg))
+				return -1;
+
+			break;
+
+		case PCIMAXFM_RDS_SET:
+			if(copy_from_user(&rds,
+					(struct pcimaxfm_rds_set __user *)arg,
+					sizeof(rds)) != 0)
+				return -1;
+
+			pcimaxfm_write_rds(rds.param, rds.value);
 			break;
 
 		default:
