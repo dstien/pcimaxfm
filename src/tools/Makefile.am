@@ -1,6 +1,5 @@
 SUBDIRS = \
-	driver \
-	tools
+	pcimaxctl
 
 MAINTAINERCLEANFILES = \
 	Makefile.in

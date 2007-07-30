@@ -5,8 +5,20 @@ AM_CONFIG_HEADER([include/config.h])
 
 AC_DEFINE(
   [PACKAGE_AUTHOR],
-  ["Daniel Stien <"PACKAGE_BUGREPORT">"],
+  ["Daniel Stien"],
   [Define the author of the package.]
+)
+
+AC_DEFINE(
+  [PACKAGE_BUGREPORT_AUTHOR],
+  [PACKAGE_AUTHOR" <"PACKAGE_BUGREPORT">"],
+  [Define the author and email address for bug reports.]
+)
+
+AC_DEFINE(
+  [PACKAGE_COPYRIGHT],
+  ["Copyright (C) 2007 "PACKAGE_AUTHOR],
+  [Define the copyright string.]
 )
 
 AC_DEFINE(
@@ -31,4 +43,6 @@ AC_OUTPUT([
 	src/driver/Makefile
 	src/driver/linux/Kbuild
 	src/driver/linux/Makefile
+	src/tools/Makefile
+	src/tools/pcimaxctl/Makefile
 ])
