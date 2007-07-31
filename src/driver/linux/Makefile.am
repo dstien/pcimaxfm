@@ -6,7 +6,7 @@ module_DATA = pcimaxfm.o
 
 moduledir = $(MODULE_DIR)
 
-KBUILD_VERBOSE = 1
+KBUILD_VERBOSE = 0
 
 export module_DATA KBUILD_VERBOSE
 

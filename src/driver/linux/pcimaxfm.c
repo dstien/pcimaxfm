@@ -192,10 +192,12 @@ static int pcimaxfm_stereo_get(void)
 	return ((pcimaxfm_io_val & PCIMAXFM_MONO) != PCIMAXFM_MONO);
 }
 
-static int pcimaxfm_probe(struct pci_dev *dev, const struct pci_device_id *id)
+static int __devinit pcimaxfm_probe(struct pci_dev *dev,
+		const struct pci_device_id *id)
 {
-	int i, ret;
-	char rdsbuf[5];
+	int ret;
+
+	printk(KERN_INFO PACKAGE ": Found card %s\n", pci_name(dev));
 
 	if ((ret = pci_enable_device(dev))) {
 		return ret;
@@ -214,31 +216,17 @@ static int pcimaxfm_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		(PCIMAXFM_MONO | PCIMAXFM_I2C_SDA | PCIMAXFM_I2C_SCL);
 	outb(pcimaxfm_io_ctrl, pcimaxfm_iobase + PCIMAXFM_OFFSET_CONTROL);
 
-	pcimaxfm_write_freq_power(PCIMAXFM_FREQ_DEFAULT, 8);
-
-	pcimaxfm_write_rds("PS00", "PCIMAXFM");
-
-	for (i = 1; i < 40; i++) {
-		sprintf(rdsbuf, "PS%02d", i);
-		pcimaxfm_write_rds(rdsbuf, "        ");
-	}
-
-	pcimaxfm_write_rds("PD00", "10");
-
-	for (i = 1; i < 40; i++) {
-		sprintf(rdsbuf, "PD%02d", i);
-		pcimaxfm_write_rds(rdsbuf, "0");
-	}
-
 	return 0;
 }
 
-static void pcimaxfm_remove(struct pci_dev *dev)
+static void __devexit pcimaxfm_remove(struct pci_dev *dev)
 {
 	release_region(pcimaxfm_iobase, PCIMAXFM_REGION_LENGTH);
+
+	pci_disable_device(dev);
 }
 
-static struct pci_device_id pcimaxfm_id_table[] = {
+static struct __devinitdata pci_device_id pcimaxfm_id_table[] = {
 	{
 		.vendor    = PCIMAXFM_VENDOR,
 		.device    = PCIMAXFM_DEVICE,
@@ -251,7 +239,7 @@ static struct pci_driver pcimaxfm_driver = {
 	.name     = PACKAGE,
 	.id_table = pcimaxfm_id_table,
 	.probe	  = pcimaxfm_probe,
-	.remove   = pcimaxfm_remove
+	.remove   = __devexit_p(pcimaxfm_remove)
 };
 
 static int pcimaxfm_open(struct inode *inode, struct file *filp)
