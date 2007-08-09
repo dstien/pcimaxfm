@@ -40,14 +40,22 @@ char *dev = "/dev/pcimaxfm0";
 
 enum
 {
-	PS00 = 0, PS01, PS02, PS03,
-	PD00,     PD01, PD02, PD03,
+	PS00, PS01, PS02, PS03, PS04, PS05, PS06, PS07, PS08, PS09,
+	PS10, PS11, PS12, PS13, PS14, PS15, PS16, PS17, PS18, PS19,
+	PS20, PS21, PS22, PS23, PS24, PS25, PS26, PS27, PS28, PS29,
+	PS30, PS31, PS32, PS33, PS34, PS35, PS36, PS37, PS38, PS39,
+
+	PD00, PD01, PD02, PD03, PD04, PD05, PD06, PD07, PD08, PD09,
+	PD10, PD11, PD12, PD13, PD14, PD15, PD16, PD17, PD18, PD19,
+	PD20, PD21, PD22, PD23, PD24, PD25, PD26, PD27, PD28, PD29,
+	PD30, PD31, PD32, PD33, PD34, PD35, PD36, PD37, PD38, PD39,
+
 	RT, RDS_PARAM_END
 };
 
 enum
 {
-	TEXT8 = 0, TEXT64, INT10
+	TEXT8, TEXT64, INT10
 };
 
 const char *rds_type_name[] = {
@@ -58,31 +66,59 @@ const char *rds_type_name[] = {
 
 const char *rds_params_name[] = {
 	[PS00] = "PS00", [PS01] = "PS01", [PS02] = "PS02", [PS03] = "PS03",
+	[PS04] = "PS04", [PS05] = "PS05", [PS06] = "PS06", [PS07] = "PS07",
+	[PS08] = "PS08", [PS09] = "PS09", [PS10] = "PS10", [PS11] = "PS11",
+	[PS12] = "PS12", [PS13] = "PS13", [PS14] = "PS14", [PS15] = "PS15",
+	[PS16] = "PS16", [PS17] = "PS17", [PS18] = "PS18", [PS19] = "PS19",
+	[PS20] = "PS20", [PS21] = "PS21", [PS22] = "PS22", [PS23] = "PS23",
+	[PS24] = "PS24", [PS25] = "PS25", [PS26] = "PS26", [PS27] = "PS27",
+	[PS28] = "PS28", [PS29] = "PS29", [PS30] = "PS30", [PS31] = "PS31",
+	[PS32] = "PS32", [PS33] = "PS33", [PS34] = "PS34", [PS35] = "PS35",
+	[PS36] = "PS36", [PS37] = "PS37", [PS38] = "PS38", [PS39] = "PS39",
+
 	[PD00] = "PD00", [PD01] = "PD01", [PD02] = "PD02", [PD03] = "PD03",
+	[PD04] = "PD04", [PD05] = "PD05", [PD06] = "PD06", [PD07] = "PD07",
+	[PD08] = "PD08", [PD09] = "PD09", [PD10] = "PD10", [PD11] = "PD11",
+	[PD12] = "PD12", [PD13] = "PD13", [PD14] = "PD14", [PD15] = "PD15",
+	[PD16] = "PD16", [PD17] = "PD17", [PD18] = "PD18", [PD19] = "PD19",
+	[PD20] = "PD20", [PD21] = "PD21", [PD22] = "PD22", [PD23] = "PD23",
+	[PD24] = "PD24", [PD25] = "PD25", [PD26] = "PD26", [PD27] = "PD27",
+	[PD28] = "PD28", [PD29] = "PD29", [PD30] = "PD30", [PD31] = "PD31",
+	[PD32] = "PD32", [PD33] = "PD33", [PD34] = "PD34", [PD35] = "PD35",
+	[PD36] = "PD36", [PD37] = "PD37", [PD38] = "PD38", [PD39] = "PD39",
+
 	[RT] = "RT"
 };
 
 const int rds_params_type[] = {
-	[PS00] = TEXT8,
-	[PS01] = TEXT8,
-	[PS02] = TEXT8,
-	[PS03] = TEXT8,
-	[PD00] = INT10,
-	[PD01] = INT10,
-	[PD02] = INT10,
-	[PD03] = INT10,
-	[RT] = TEXT64,
+	[PS00] = TEXT8, [PS01] = TEXT8, [PS02] = TEXT8, [PS03] = TEXT8,
+	[PS04] = TEXT8, [PS05] = TEXT8, [PS06] = TEXT8, [PS07] = TEXT8,
+	[PS08] = TEXT8, [PS09] = TEXT8, [PS10] = TEXT8, [PS11] = TEXT8,
+	[PS12] = TEXT8, [PS13] = TEXT8, [PS14] = TEXT8, [PS15] = TEXT8,
+	[PS16] = TEXT8, [PS17] = TEXT8, [PS18] = TEXT8, [PS19] = TEXT8,
+	[PS20] = TEXT8, [PS21] = TEXT8, [PS22] = TEXT8, [PS23] = TEXT8,
+	[PS24] = TEXT8, [PS25] = TEXT8, [PS26] = TEXT8, [PS27] = TEXT8,
+	[PS28] = TEXT8, [PS29] = TEXT8, [PS30] = TEXT8, [PS31] = TEXT8,
+	[PS32] = TEXT8, [PS33] = TEXT8, [PS34] = TEXT8, [PS35] = TEXT8,
+	[PS36] = TEXT8, [PS37] = TEXT8, [PS38] = TEXT8, [PS39] = TEXT8,
+
+	[PD00] = INT10, [PD01] = INT10, [PD02] = INT10, [PD03] = INT10,
+	[PD04] = INT10, [PD05] = INT10, [PD06] = INT10, [PD07] = INT10,
+	[PD08] = INT10, [PD09] = INT10, [PD10] = INT10, [PD11] = INT10,
+	[PD12] = INT10, [PD13] = INT10, [PD14] = INT10, [PD15] = INT10,
+	[PD16] = INT10, [PD17] = INT10, [PD18] = INT10, [PD19] = INT10,
+	[PD20] = INT10, [PD21] = INT10, [PD22] = INT10, [PD23] = INT10,
+	[PD24] = INT10, [PD25] = INT10, [PD26] = INT10, [PD27] = INT10,
+	[PD28] = INT10, [PD29] = INT10, [PD30] = INT10, [PD31] = INT10,
+	[PD32] = INT10, [PD33] = INT10, [PD34] = INT10, [PD35] = INT10,
+	[PD36] = INT10, [PD37] = INT10, [PD38] = INT10, [PD39] = INT10,
+
+	[RT] = TEXT64
 };
 
 const char *rds_params_description[] = {
-	[PS00] = "Program service bank 00",
-	[PS01] = "Program service bank 01",
-	[PS02] = "Program service bank 02",
-	[PS03] = "Program service bank 03",
-	[PD00] = "Program service bank 00 duration",
-	[PD01] = "Program service bank 01 duration",
-	[PD02] = "Program service bank 02 duration",
-	[PD03] = "Program service bank 03 duration",
+	[PS00] = "Program service banks",
+	[PD00] = "Program service banks duration",
 	[RT] = "Radio text"
 };
 
@@ -117,7 +153,8 @@ void print_help(char *prog, int status)
 	printf("Control PCI MAX FM transmitter devices.\n\n");
 
 	printf("Omitting optional arguments will print current value.\n");
-	printf("-f, --freq[=MHz]          get/set frequency in MHz (%.2f-%.2f)\n", FREQ(PCIMAXFM_FREQ_MIN), FREQ(PCIMAXFM_FREQ_MAX));
+	printf("-f, --freq[=MHz|50KHz]    get/set frequency in MHz (%.2f-%.2f)\n", FREQ(PCIMAXFM_FREQ_MIN), FREQ(PCIMAXFM_FREQ_MAX));
+	printf("                          or 50 KHz steps (%d-%d)\n", PCIMAXFM_FREQ_MIN, PCIMAXFM_FREQ_MAX);
 	printf("-p, --power[=LVL]         get/set power level (%d-%d)\n", PCIMAXFM_POWER_MIN, PCIMAXFM_POWER_MAX);
 	printf("-s, --stereo[=1|0]        get/toggle stereo encoder (1 = on, 0 = off)\n");
 	printf("-r, --rds=PARM=VAL[,...]  set RDS parameters (see --help-rds)\n\n");
@@ -139,11 +176,22 @@ void print_help_rds(int status)
 	int i;
 
 	printf("Valid parameters for the --rds option.\n\n");
-	printf("Parameter  Type       Description\n");
-	printf("~~~~~~~~~  ~~~~       ~~~~~~~~~~~\n");
+	printf("Parameter    Type       Description\n");
+	printf("~~~~~~~~~~~  ~~~~       ~~~~~~~~~~~\n");
+	printf("%s - %s  %-10s %s\n",
+			rds_params_name[PS00],
+			rds_params_name[PS39],
+			rds_type_name[rds_params_type[PS00]],
+			rds_params_description[PS00]);
+	printf("%s - %s  %-10s %s\n",
+			rds_params_name[PD00],
+			rds_params_name[PD39],
+			rds_type_name[rds_params_type[PD00]],
+			rds_params_description[PD00]);
 
-	for (i = 0; i < RDS_PARAM_END; i++) {
-		printf("%-10s %-10s %s\n", rds_params_name[i], rds_type_name[rds_params_type[i]], rds_params_description[i]);
+
+	for (i = RT; i < RDS_PARAM_END; i++) {
+		printf("%-12s %-10s %s\n", rds_params_name[i], rds_type_name[rds_params_type[i]], rds_params_description[i]);
 	}
 
 	printf("\n");
@@ -175,13 +223,23 @@ void freq(const char *arg)
 	dev_open();
 	if (arg) {
 		if (sscanf(arg, "%lf", &ffreq) < 1) {
-			ERROR_MSG("Invalid frequency. Got \"%s\", expected floating point number in the range of %.2f-%.2f.", arg, FREQ(PCIMAXFM_FREQ_MIN), FREQ(PCIMAXFM_FREQ_MAX));
+			ERROR_MSG("Invalid frequency. Got \"%s\", expected floating point number in the range of %.2f-%.2f or integer in the range of %d-%d.",
+					arg, FREQ(PCIMAXFM_FREQ_MIN),
+					FREQ(PCIMAXFM_FREQ_MAX),
+					PCIMAXFM_FREQ_MIN, PCIMAXFM_FREQ_MAX);
 		}
 
-		freq = (int)(ffreq * 20.0f);
+		freq = (int)ffreq;
+
+		if (freq < PCIMAXFM_FREQ_MIN) {
+			freq = (int)(ffreq * 20.0f);
+		}
 
 		if (freq < PCIMAXFM_FREQ_MIN || freq > PCIMAXFM_FREQ_MAX) {
-			ERROR_MSG("Frequency out of range. Got %.2f, expected %.2f-%.2f.", ffreq, FREQ(PCIMAXFM_FREQ_MIN), FREQ(PCIMAXFM_FREQ_MAX));
+			ERROR_MSG("Frequency out of range. Got %.2f, expected %.2f-%.2f or %d-%d.",
+					ffreq, FREQ(PCIMAXFM_FREQ_MIN),
+					FREQ(PCIMAXFM_FREQ_MAX),
+					PCIMAXFM_FREQ_MIN, PCIMAXFM_FREQ_MAX);
 		}
 		
 		if (ioctl(fd, PCIMAXFM_FREQ_SET, &freq) == -1) {

@@ -37,7 +37,7 @@ MODULE_VERSION(PACKAGE_VERSION);
 MODULE_AUTHOR(PACKAGE_BUGREPORT_AUTHOR);
 MODULE_DESCRIPTION(PACKAGE_DESCRIPTION);
 
-int pcimaxfm_major = PCIMAXFM_MAJOR;
+static int pcimaxfm_major = PCIMAXFM_MAJOR;
 static struct class *pcimaxfm_class;
 
 struct pcimaxfm_dev {
@@ -50,8 +50,10 @@ struct pcimaxfm_dev {
 	unsigned int freq;
 	unsigned int power;
 
+	unsigned int use_count;
+	spinlock_t use_lock;
 	struct pci_dev *pci_dev;
-	struct semaphore sem;
+	//struct semaphore sem;
 	struct cdev cdev;
 };
 
@@ -207,16 +209,34 @@ static int pcimaxfm_stereo_get(struct pcimaxfm_dev *dev)
 
 static int pcimaxfm_open(struct inode *inode, struct file *filp)
 {
-	struct pcimaxfm_dev *dev;
+	int ret = 0;
+	struct pcimaxfm_dev *dev = container_of(inode->i_cdev,
+			struct pcimaxfm_dev, cdev);
 
-	dev = container_of(inode->i_cdev, struct pcimaxfm_dev, cdev);
+	spin_lock(&dev->use_lock);
+
+	if (dev->use_count && !capable(CAP_DAC_OVERRIDE)) {
+		ret = -EBUSY;
+		goto open_done;
+	}
+
+	dev->use_count++;
 	filp->private_data = dev;
 
-	return 0;
+open_done:
+	spin_unlock(&dev->use_lock);
+
+	return ret;
 }
 
 static int pcimaxfm_release(struct inode *inode, struct file *filp)
 {
+	struct pcimaxfm_dev *dev = filp->private_data;
+
+	spin_lock(&dev->use_lock);
+	dev->use_count--;
+	spin_unlock(&dev->use_lock);
+
 	return 0;
 }
 
@@ -229,9 +249,9 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 		unsigned int cmd, unsigned long arg)
 {
-	struct pcimaxfm_dev *dev = filp->private_data;
 	int data;
 	struct pcimaxfm_rds_set rds;
+	struct pcimaxfm_dev *dev = filp->private_data;
 
 	switch (cmd) {
 		case PCIMAXFM_FREQ_SET:
