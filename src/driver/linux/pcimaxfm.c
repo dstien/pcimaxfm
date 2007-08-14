@@ -32,6 +32,18 @@
 #include <linux/pci.h>
 #include <linux/types.h>
 
+#define KMSG(lvl, fmt, ...) \
+	printk(lvl PACKAGE ": " fmt "\n", ## __VA_ARGS__)
+#define KMSGN(lvl, fmt, ...) \
+	printk(lvl PACKAGE "%u: " fmt "\n", dev->dev_num, ## __VA_ARGS__)
+
+#define KMSG_ERR(fmt, ...)    KMSG(KERN_ERR, fmt, ## __VA_ARGS__)
+#define KMSG_ERRN(fmt, ...)   KMSGN(KERN_ERR, fmt, ## __VA_ARGS__)
+#define KMSG_INFO(fmt, ...)   KMSG(KERN_INFO, fmt, ## __VA_ARGS__)
+#define KMSG_INFON(fmt, ...)  KMSGN(KERN_INFO, fmt, ## __VA_ARGS__)
+#define KMSG_DEBUG(fmt, ...)  KMSG(KERN_DEBUG, fmt, ## __VA_ARGS__)
+#define KMSG_DEBUGN(fmt, ...) KMSGN(KERN_DEBUG, fmt, ## __VA_ARGS__)
+
 MODULE_LICENSE("GPL");
 MODULE_VERSION(PACKAGE_VERSION);
 MODULE_AUTHOR(PACKAGE_BUGREPORT_AUTHOR);
@@ -53,7 +65,6 @@ struct pcimaxfm_dev {
 	unsigned int use_count;
 	spinlock_t use_lock;
 	struct pci_dev *pci_dev;
-	//struct semaphore sem;
 	struct cdev cdev;
 };
 
@@ -64,25 +75,25 @@ static unsigned int pcimaxfm_num_devs = 0;
 static void pcimaxfm_i2c_sda_set(struct pcimaxfm_dev *dev)
 {
 	dev->io_data |= PCIMAXFM_I2C_SDA;
-	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_VALUE);
+	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_DATA);
 }
 
 static void pcimaxfm_i2c_sda_clr(struct pcimaxfm_dev *dev)
 {
 	dev->io_data &= ~PCIMAXFM_I2C_SDA;
-	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_VALUE);
+	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_DATA);
 }
 
 static void pcimaxfm_i2c_scl_set(struct pcimaxfm_dev *dev)
 {
 	dev->io_data |= PCIMAXFM_I2C_SCL;
-	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_VALUE);
+	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_DATA);
 }
 
 static void pcimaxfm_i2c_scl_clr(struct pcimaxfm_dev *dev)
 {
 	dev->io_data &= ~PCIMAXFM_I2C_SCL;
-	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_VALUE);
+	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_DATA);
 }
 
 static void pcimaxfm_i2c_delay(void)
@@ -167,28 +178,29 @@ static void pcimaxfm_write_freq_power(struct pcimaxfm_dev *dev,
 	pcimaxfm_i2c_write_byte(dev, dev->power);
 	pcimaxfm_i2c_stop(dev);
 
-	printk(KERN_DEBUG PACKAGE ": Frequency: %d Power: %d\n",
-			dev->freq, dev->power);
+	KMSG_DEBUGN("Frequency: %d Power: %d", dev->freq, dev->power);
 }
 
 static void pcimaxfm_write_rds(struct pcimaxfm_dev *dev,
-		char *parameter, char *value)
+		const char *parameter, const char *value)
 {
-	printk(KERN_DEBUG PACKAGE ": RDS: %s = \"%s\"\n", parameter, value);
+	char *parm = (char*)parameter, *val = (char*)value;
 
 	pcimaxfm_i2c_start(dev,
 			PCIMAXFM_I2C_ADDR_RDS | PCIMAXFM_I2C_ADDR_WRITE_FLAG);
 
 	pcimaxfm_i2c_write_byte(dev, 0);
-	while (*parameter)
-		pcimaxfm_i2c_write_byte(dev, *parameter++);
+	while (*parm)
+		pcimaxfm_i2c_write_byte(dev, *parm++);
 
 	pcimaxfm_i2c_write_byte(dev, 1);
-	while (*value)
-		pcimaxfm_i2c_write_byte(dev, *value++);
+	while (*val)
+		pcimaxfm_i2c_write_byte(dev, *val++);
 
 	pcimaxfm_i2c_write_byte(dev, 2);
 	pcimaxfm_i2c_stop(dev);
+
+	KMSG_DEBUGN("RDS: %s = \"%s\"", parameter, value);
 }
 
 static void pcimaxfm_stereo_set(struct pcimaxfm_dev *dev, int stereo)
@@ -199,7 +211,7 @@ static void pcimaxfm_stereo_set(struct pcimaxfm_dev *dev, int stereo)
 		dev->io_data |= PCIMAXFM_MONO;
 	}
 
-	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_VALUE);
+	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_DATA);
 }
 
 static int pcimaxfm_stereo_get(struct pcimaxfm_dev *dev)
@@ -243,7 +255,50 @@ static int pcimaxfm_release(struct inode *inode, struct file *filp)
 static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 		loff_t *f_pos)
 {
-	return 0;
+	struct pcimaxfm_dev *dev = filp->private_data;
+	char str[0xff], str_freq[0x20], str_power[0x6];
+	int len;
+
+	if (*f_pos != 0) {
+		return 0;
+	}
+
+	if (dev->freq == PCIMAXFM_FREQ_NA) {
+		sprintf(str_freq, "NA");
+	} else {
+		sprintf(str_freq, "%d.%d%d MHz (%u 50 KHz steps)",
+				dev->freq / 20,
+				(dev->freq % 20) / 2,
+				(dev->freq % 2 == 0 ? 0 : 5),
+				dev->freq);
+	}
+
+	if (dev->power == PCIMAXFM_POWER_NA) {
+		sprintf(str_power, "NA/%u", PCIMAXFM_POWER_MAX);
+	} else {
+		 sprintf(str_power, "%u/%u", dev->power, PCIMAXFM_POWER_MAX);
+	}
+
+	sprintf(str,
+			"Freq    : %s\n"
+			"Power   : %s\n"
+			"Stereo  : %u\n"
+			"\n"
+			"Address : %#lx\n"
+			"Control : %#x\n"
+			"Data    : %#x\n",
+			str_freq, str_power, pcimaxfm_stereo_get(dev),
+			dev->base_addr, dev->io_ctrl, dev->io_data);
+
+	len = strlen(str);
+
+	if ((count < len) || copy_to_user(buf, str, len)) {
+		return -EFAULT;
+	}
+
+	*f_pos = len;
+
+	return len;
 }
 
 static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
@@ -325,8 +380,8 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 	dev_t dev_t;
 
 	if (pcimaxfm_num_devs >= PCIMAXFM_MAX_DEVS) {
-		printk(KERN_ERR PACKAGE
-	"%u: Couldn't init card, increase max number of devices (%u).\n",
+		KMSG_ERR("Couldn't init card %u, increase max number of "
+				"devices (%u).",
 				pcimaxfm_num_devs, PCIMAXFM_MAX_DEVS);
 		return -ENOMEM;
 	}
@@ -343,16 +398,14 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 	pcimaxfm_num_devs++;
 
 	if ((ret = pci_enable_device(pci_dev))) {
-		printk(KERN_INFO PACKAGE "%u: Couldn't enable device.\n",
-				dev->dev_num);
+		KMSG_ERRN("Couldn't enable device.");
 		goto err_pci_enable_device;
 	}
 
 	dev->base_addr = pci_resource_start(pci_dev, 0);
 
 	if (!request_region(dev->base_addr, PCIMAXFM_REGION_LENGTH, PACKAGE)) {
-		printk(KERN_ERR PACKAGE "%u: I/O ports in use.\n",
-				dev->dev_num);
+		KMSG_ERRN("Couldn't request I/O ports, region already in use.");
 		ret = -EBUSY;
 		goto err_request_region;
 	}
@@ -362,24 +415,22 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 	dev_t = MKDEV(pcimaxfm_major, dev->dev_num);
 
 	if ((ret = cdev_add(&dev->cdev, dev_t, 1))) {
-		printk(KERN_ERR PACKAGE "%u: Couldn't add cdev.\n",
-				dev->dev_num);
+		KMSG_ERRN("Couldn't add cdev.");
 		goto err_cdev_add;
 	}
 
 	if (IS_ERR(class_device_create(pcimaxfm_class, NULL, dev_t, NULL,
 					PACKAGE "%d", dev->dev_num))) {
-		printk(KERN_ERR PACKAGE "%u: Couldn't create class device.\n",
-				dev->dev_num);
+		KMSG_ERRN("Couldn't create class device.");
 		ret = -1;
 		goto err_class_device_create;
 	}
 
-	printk(KERN_INFO PACKAGE "%u: Found card %s, base address %#lx\n",
-			dev->dev_num, pci_name(pci_dev), dev->base_addr);
+	KMSG_INFON("Found card %s, base address %#lx",
+			pci_name(pci_dev), dev->base_addr);
 
 	dev->io_ctrl |= (PCIMAXFM_MONO | PCIMAXFM_I2C_SDA | PCIMAXFM_I2C_SCL);
-	outb(dev->io_ctrl, dev->base_addr + PCIMAXFM_OFFSET_CONTROL);
+	outb(dev->io_ctrl, dev->base_addr + PCIMAXFM_OFFSET_CTRL);
 
 	return 0;
 
@@ -400,7 +451,7 @@ static void __devexit pcimaxfm_remove(struct pci_dev *pci_dev)
 	struct pcimaxfm_dev *dev = pci_get_drvdata(pci_dev);
 
 	if (dev == NULL) {
-		printk(KERN_ERR PACKAGE": Couldn't find PCI driver data.\n");
+		KMSG_ERR("Couldn't find PCI driver data for removal.");
 	} else {
 		release_region(dev->base_addr, PCIMAXFM_REGION_LENGTH);
 		cdev_del(&dev->cdev);
@@ -441,20 +492,19 @@ static int __init pcimaxfm_init(void)
 	}
 
 	if (ret) {
-		printk(KERN_ERR PACKAGE
-			": Couldn't allocate char devices (major %d).\n",
-			pcimaxfm_major);
+		KMSG_ERR("Couldn't allocate char devices (major %d, devs %d).",
+				pcimaxfm_major, PCIMAXFM_MAX_DEVS);
 		return ret;
 	}
 
 	if (IS_ERR(pcimaxfm_class = class_create(THIS_MODULE, PACKAGE))) {
-		printk(KERN_ERR PACKAGE ": Couldn't create driver class.\n");
+		KMSG_ERR("Couldn't create driver class.");
 		ret = -1;
 		goto err_class_create;
 	}
 
 	if ((ret = pci_register_driver(&pcimaxfm_driver))) {
-		printk(KERN_ERR PACKAGE ": Couldn't register PCI driver.\n");
+		KMSG_ERR("Couldn't register PCI driver.");
 		goto err_pci_register_driver;
 	}
 
