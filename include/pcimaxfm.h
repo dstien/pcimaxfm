@@ -20,9 +20,6 @@
 #ifndef _PCIMAXFM_H
 #define _PCIMAXFM_H
 
-#define PCIMAXFM_MAX_DEVS		1
-#define PCIMAXFM_MAJOR			0 /* 0 == dynamic allocation */
-
 #define PCIMAXFM_VENDOR			0xe159
 #define PCIMAXFM_DEVICE			0x0001
 #define PCIMAXFM_SUBVENDOR		0x4001

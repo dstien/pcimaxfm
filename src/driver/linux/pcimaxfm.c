@@ -266,7 +266,7 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 	if (dev->freq == PCIMAXFM_FREQ_NA) {
 		sprintf(str_freq, "NA");
 	} else {
-		sprintf(str_freq, "%d.%d%d MHz (%u 50 KHz steps)",
+		sprintf(str_freq, "%u.%u%u MHz (%u 50 KHz steps)",
 				dev->freq / 20,
 				(dev->freq % 20) / 2,
 				(dev->freq % 2 == 0 ? 0 : 5),
@@ -388,8 +388,6 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 
 	dev = &pcimaxfm_devs[pcimaxfm_num_devs];
 	dev->dev_num = pcimaxfm_num_devs;
-	dev->io_ctrl = 0;
-	dev->io_data = 0;
 	dev->freq    = PCIMAXFM_FREQ_NA;
 	dev->power   = PCIMAXFM_POWER_NA;
 	dev->pci_dev = pci_dev_get(pci_dev);
@@ -429,6 +427,18 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 	KMSG_INFON("Found card %s, base address %#lx",
 			pci_name(pci_dev), dev->base_addr);
 
+	/* Get stereo encoder state if its control line is already enabled. */
+	dev->io_ctrl =
+		inb(dev->base_addr + PCIMAXFM_OFFSET_CTRL) & PCIMAXFM_MONO;
+
+	if ((dev->io_ctrl & PCIMAXFM_MONO) == PCIMAXFM_MONO) {
+		dev->io_data = inb(dev->base_addr + PCIMAXFM_OFFSET_DATA)
+			& PCIMAXFM_MONO;
+	} else {
+		dev->io_data = 0;
+	}
+
+	/* Enable stereo encoder control and I2C. */
 	dev->io_ctrl |= (PCIMAXFM_MONO | PCIMAXFM_I2C_SDA | PCIMAXFM_I2C_SCL);
 	outb(dev->io_ctrl, dev->base_addr + PCIMAXFM_OFFSET_CTRL);
 
@@ -453,6 +463,13 @@ static void __devexit pcimaxfm_remove(struct pci_dev *pci_dev)
 	if (dev == NULL) {
 		KMSG_ERR("Couldn't find PCI driver data for removal.");
 	} else {
+		/* Disable everything but stereo encoder state. */
+		dev->io_ctrl &= PCIMAXFM_MONO;
+		outb(dev->io_ctrl, dev->base_addr + PCIMAXFM_OFFSET_CTRL);
+
+		dev->io_data &= PCIMAXFM_MONO;
+		outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_DATA);
+
 		release_region(dev->base_addr, PCIMAXFM_REGION_LENGTH);
 		cdev_del(&dev->cdev);
 		class_device_destroy(pcimaxfm_class,

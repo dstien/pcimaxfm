@@ -54,3 +54,52 @@ AC_DEFUN([PCIMAXFM_PATH_LINUX_MODULE],
     AC_MSG_RESULT($MODULE_DIR)
   ]
 )
+
+dnl Set number of devices.
+
+AC_DEFUN([PCIMAXFM_WITH_MAX_DEVS],
+  [
+    min=1
+    max=512
+
+    AC_ARG_WITH([max-devs],
+      AS_HELP_STRING([--with-max-devs=NUM], [Max number of devices @<:@1@:>@]),
+      [
+        if test $withval -ge $min -a $withval -le $max; then
+          max_devs=$withval
+        else
+          AC_MSG_ERROR([
+*** --with-max-devs requires an integer paramater in the range of $min-$max.
+          ])
+        fi
+      ],
+      [max_devs=1]
+    )
+    AC_DEFINE_UNQUOTED([PCIMAXFM_MAX_DEVS], [$max_devs], [Max number of devices.])
+  ]
+)
+
+dnl Set major device number.
+
+AC_DEFUN([PCIMAXFM_WITH_MAJOR],
+  [
+    min=0
+    max=4094
+
+    AC_ARG_WITH([major],
+      AS_HELP_STRING([--with-major=NUM], [Major device number @<:@0 (dynamic)@:>@]),
+      [
+        if test $withval -ge $min -a $withval -le $max; then
+          major=$withval
+        else
+          AC_MSG_ERROR([
+*** --with-major requires an integer paramater in the range of $min-$max.
+*** A value of 0 (default) indicates dynamic allocation.
+          ])
+        fi
+      ],
+      [major=0]
+    )
+    AC_DEFINE_UNQUOTED([PCIMAXFM_MAJOR], [$major], [Major device number.])
+  ]
+)
