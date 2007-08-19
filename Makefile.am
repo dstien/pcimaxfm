@@ -9,6 +9,7 @@ EXTRA_DIST = \
 MAINTAINERCLEANFILES = \
 	Makefile.in \
 	aclocal.m4 \
+	compile \
 	configure \
 	depcomp \
 	install-sh \

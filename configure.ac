@@ -28,6 +28,8 @@ AC_DEFINE(
 )
 
 AC_PROG_CC()
+AM_PROG_CC_C_O()
+AC_PROG_RANLIB()
 
 PCIMAXFM_PATH_LINUX_SOURCES()
 PCIMAXFM_PATH_LINUX_MODULE()
@@ -42,6 +44,7 @@ AC_OUTPUT([
 	include/Makefile
 	scripts/Makefile
 	src/Makefile
+	src/common/Makefile
 	src/driver/Makefile
 	src/driver/linux/Kbuild
 	src/driver/linux/Makefile

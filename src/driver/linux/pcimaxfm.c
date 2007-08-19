@@ -264,9 +264,10 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 	}
 
 	if (dev->freq == PCIMAXFM_FREQ_NA) {
-		sprintf(str_freq, "NA");
+		snprintf(str_freq, sizeof(str_freq), "NA");
 	} else {
-		sprintf(str_freq, "%u.%u%u MHz (%u 50 KHz steps)",
+		snprintf(str_freq, sizeof(str_freq),
+				"%u.%u%u MHz (%u 50 KHz steps)",
 				dev->freq / 20,
 				(dev->freq % 20) / 2,
 				(dev->freq % 2 == 0 ? 0 : 5),
@@ -274,12 +275,14 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 	}
 
 	if (dev->power == PCIMAXFM_POWER_NA) {
-		sprintf(str_power, "NA/%u", PCIMAXFM_POWER_MAX);
+		snprintf(str_power, sizeof(str_power), "NA/%u",
+				PCIMAXFM_POWER_MAX);
 	} else {
-		 sprintf(str_power, "%u/%u", dev->power, PCIMAXFM_POWER_MAX);
+		snprintf(str_power, sizeof(str_power), "%u/%u",
+				dev->power, PCIMAXFM_POWER_MAX);
 	}
 
-	sprintf(str,
+	snprintf(str, sizeof(str),
 			"Freq    : %s\n"
 			"Power   : %s\n"
 			"Stereo  : %u\n"

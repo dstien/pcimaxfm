@@ -58,7 +58,7 @@
 #define PCIMAXFM_POWER_GET	_IOW(PCIMAXFM_IOC_MAGIC, 5, int)
 #define PCIMAXFM_STEREO_SET	_IOR(PCIMAXFM_IOC_MAGIC, 6, int)
 #define PCIMAXFM_STEREO_GET	_IOW(PCIMAXFM_IOC_MAGIC, 7, int)
-#define PCIMAXFM_RDS_SET	_IOR(PCIMAXFM_IOC_MAGIC, 9, struct rds_set *)
+#define PCIMAXFM_RDS_SET	_IOR(PCIMAXFM_IOC_MAGIC, 9, struct pcimaxfm_rds_set *)
 
 struct pcimaxfm_rds_set {
 	char *param;
