@@ -250,14 +250,17 @@ void rds(char *arg)
 
 		dev_open();
 
-		rds_set.param = (char *)rds_params_name[c];
+		rds_set.param = c;
 		rds_set.value = val;
 
 		if(ioctl(fd, PCIMAXFM_RDS_SET, &rds_set) == -1) {
-			ERROR_MSG("Writing RDS parameter %s = \"%s\" failed.", rds_set.param, rds_set.value);
+			ERROR_MSG("Writing RDS parameter %s = \"%s\" failed.",
+					rds_params_name[rds_set.param],
+					rds_set.value);
 		}
 
-		NOTICE_MSG("RDS: %-4s = \"%s\"", rds_set.param, rds_set.value);
+		NOTICE_MSG("RDS: %-4s = \"%s\"",
+				rds_params_name[rds_set.param], rds_set.value);
 	}
 }
 

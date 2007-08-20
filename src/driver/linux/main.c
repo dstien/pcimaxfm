@@ -32,6 +32,8 @@
 #include <linux/pci.h>
 #include <linux/types.h>
 
+#include "../../common/rds.h"
+
 #define KMSG(lvl, fmt, ...) \
 	printk(lvl PACKAGE ": " fmt "\n", ## __VA_ARGS__)
 #define KMSGN(lvl, fmt, ...) \
@@ -357,7 +359,13 @@ static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 					sizeof(rds)) != 0)
 				return -1;
 
-			pcimaxfm_write_rds(dev, rds.param, rds.value);
+			if (validate_rds(rds.param, rds.value, 0, NULL)) {
+				KMSG_ERRN("Invalid RDS set received.");
+				return -1;
+			}
+
+			pcimaxfm_write_rds(dev,
+					rds_params_name[rds.param], rds.value);
 			break;
 
 		default:

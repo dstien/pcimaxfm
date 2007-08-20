@@ -61,7 +61,7 @@
 #define PCIMAXFM_RDS_SET	_IOR(PCIMAXFM_IOC_MAGIC, 9, struct pcimaxfm_rds_set *)
 
 struct pcimaxfm_rds_set {
-	char *param;
+	int param;
 	char *value;
 };
 

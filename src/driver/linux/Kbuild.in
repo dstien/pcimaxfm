@@ -1,1 +1,2 @@
-obj-m = $(module_DATA)
+obj-m := $(module_DATA)
+pcimaxfm-y := main.o ../../common/libcommon.a

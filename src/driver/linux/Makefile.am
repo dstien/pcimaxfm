@@ -1,5 +1,5 @@
 EXTRA_DIST = \
-	pcimaxfm.c \
+	main.c \
 	udev.rules
 
 module_DATA = pcimaxfm.o

@@ -40,10 +40,10 @@ enum
 	TEXT8, TEXT64, INT10, RDS_TYPE_END
 };
 
-const char *rds_type_name[RDS_TYPE_END];
-const char *rds_params_name[RDS_PARAM_END];
-const int rds_params_type[RDS_PARAM_END];
-const char *rds_params_description[RDS_PARAM_END];
+extern const char *rds_type_name[RDS_TYPE_END];
+extern const char *rds_params_name[RDS_PARAM_END];
+extern const char *rds_params_description[RDS_PARAM_END];
+extern const int rds_params_type[RDS_PARAM_END];
 
 int validate_rds(int, char*, int, char *);
 
