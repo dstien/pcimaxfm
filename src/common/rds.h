@@ -41,7 +41,7 @@ enum
 };
 
 extern const char *rds_type_name[RDS_TYPE_END];
-extern const char *rds_params_name[RDS_PARAM_END];
+extern char *const rds_params_name[RDS_PARAM_END];
 extern const char *rds_params_description[RDS_PARAM_END];
 extern const int rds_params_type[RDS_PARAM_END];
 

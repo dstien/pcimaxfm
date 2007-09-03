@@ -28,7 +28,7 @@ const char *rds_type_name[] = {
 	[INT10]  = "0 - 10"
 };
 
-const char *rds_params_name[] = {
+char *const rds_params_name[] = {
 	[PS00] = "PS00", [PS01] = "PS01", [PS02] = "PS02", [PS03] = "PS03",
 	[PS04] = "PS04", [PS05] = "PS05", [PS06] = "PS06", [PS07] = "PS07",
 	[PS08] = "PS08", [PS09] = "PS09", [PS10] = "PS10", [PS11] = "PS11",
@@ -85,6 +85,12 @@ const char *rds_params_description[] = {
 	[PD00] = "Program service banks duration",
 	[RT] = "Radio text"
 };
+
+typedef unsigned int size_t;
+
+int snprintf(char *, size_t, const char *, ...);
+size_t strlen(const char *);
+int sscanf(const char *, const char *, ...);
 
 int validate_rds(int param, char *val, int err_len, char *err)
 {
