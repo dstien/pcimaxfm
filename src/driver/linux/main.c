@@ -207,6 +207,10 @@ static void pcimaxfm_write_rds(struct pcimaxfm_dev *dev,
 
 static void pcimaxfm_stereo_set(struct pcimaxfm_dev *dev, int stereo)
 {
+#if PCIMAXFM_INVERT_STEREO
+	stereo = !stereo;
+#endif
+
 	if (stereo) {
 		dev->io_data &= ~PCIMAXFM_MONO;
 	} else {
@@ -218,7 +222,13 @@ static void pcimaxfm_stereo_set(struct pcimaxfm_dev *dev, int stereo)
 
 static int pcimaxfm_stereo_get(struct pcimaxfm_dev *dev)
 {
-	return ((dev->io_data & PCIMAXFM_MONO) != PCIMAXFM_MONO);
+	int stereo = ((dev->io_data & PCIMAXFM_MONO) != PCIMAXFM_MONO);
+
+#if PCIMAXFM_INVERT_STEREO
+	return !stereo;
+#else
+	return stereo;
+#endif
 }
 
 static int pcimaxfm_open(struct inode *inode, struct file *filp)
@@ -258,8 +268,8 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 		loff_t *f_pos)
 {
 	struct pcimaxfm_dev *dev = filp->private_data;
-	char str[0xff], str_freq[0x20], str_power[0x6];
 	int len;
+	static char str[0xff], str_freq[0x20], str_power[0x6], str_stereo[0x4];
 
 	if (*f_pos != 0) {
 		return 0;
@@ -284,16 +294,19 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 				dev->power, PCIMAXFM_POWER_MAX);
 	}
 
+	snprintf(str_stereo, sizeof(str_stereo), "%s",
+			PCIMAXFM_STR_BOOL(pcimaxfm_stereo_get(dev)));
+
 	snprintf(str, sizeof(str),
 			"Freq    : %s\n"
 			"Power   : %s\n"
-			"Stereo  : %u\n"
+			"Stereo  : %s\n"
 			"\n"
 			"Address : %#lx\n"
 			"Control : %#x\n"
 			"Data    : %#x\n",
-			str_freq, str_power, pcimaxfm_stereo_get(dev),
-			dev->base_addr, dev->io_ctrl, dev->io_data);
+			str_freq, str_power, str_stereo, dev->base_addr,
+			dev->io_ctrl, dev->io_data);
 
 	len = strlen(str);
 

@@ -18,6 +18,7 @@
  */
 
 #define _XOPEN_SOURCE 500
+
 #include <config.h>
 #include <pcimaxfm.h>
 
@@ -36,7 +37,6 @@
 #define DEBUG_MSG(format, ...) if (verbosity == 1) printf(format "\n", ## __VA_ARGS__)
 
 #define FREQ(steps) (steps / 20.0f)
-#define IS_ON(val) (val == 0 ? "Off" : "On")
 
 int verbosity = 0;
 int fd = 0;
@@ -233,7 +233,7 @@ void stereo(char *arg)
 		}
 	}
 
-	NOTICE_MSG("Stereo encoder: %s", IS_ON(stereo));
+	NOTICE_MSG("Stereo encoder: %s", PCIMAXFM_STR_BOOL(stereo));
 }
 
 void rds(char *arg)

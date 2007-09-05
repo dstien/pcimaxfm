@@ -65,4 +65,6 @@ struct pcimaxfm_rds_set {
 	char *value;
 };
 
+#define PCIMAXFM_STR_BOOL(val)	(val == 0 ? "Off" : "On")
+
 #endif /* _PCIMAXFM_H */
