@@ -411,10 +411,13 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 	}
 
 	dev = &pcimaxfm_devs[pcimaxfm_num_devs];
-	dev->dev_num = pcimaxfm_num_devs;
-	dev->freq    = PCIMAXFM_FREQ_NA;
-	dev->power   = PCIMAXFM_POWER_NA;
-	dev->pci_dev = pci_dev_get(pci_dev);
+	dev->dev_num   = pcimaxfm_num_devs;
+	dev->freq      = PCIMAXFM_FREQ_NA;
+	dev->power     = PCIMAXFM_POWER_NA;
+	dev->use_count = 0;
+	spin_lock_init(&dev->use_lock);
+
+	dev->pci_dev   = pci_dev_get(pci_dev);
 	pci_set_drvdata(pci_dev, dev);
 
 	pcimaxfm_num_devs++;
