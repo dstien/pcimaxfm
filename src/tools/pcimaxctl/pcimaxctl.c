@@ -1,6 +1,6 @@
 /*
  * pcimaxfm - PCI MAX FM transmitter driver and tools
- * Copyright (C) 2007 Daniel Stien <daniel@stien.org>
+ * Copyright (C) 2007-2008 Daniel Stien <daniel@stien.org>
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -99,6 +99,8 @@ void print_help(char *prog, int status)
 	printf("-h, --help                print this text and exit\n");
 #if PCIMAXFM_ENABLE_RDS
 	printf("-H, --help-rds            print list of valid RDS parameters\n\n");
+#else
+	printf("\n");
 #endif /* PCIMAXFM_ENABLE_RDS */
 
 	printf("Report bugs to <"PACKAGE_BUGREPORT">.\n");

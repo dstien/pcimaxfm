@@ -1,6 +1,6 @@
 /*
  * pcimaxfm - PCI MAX FM transmitter driver and tools
- * Copyright (C) 2007 Daniel Stien <daniel@stien.org>
+ * Copyright (C) 2007-2008 Daniel Stien <daniel@stien.org>
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -289,8 +289,10 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 {
 	struct pcimaxfm_dev *dev = filp->private_data;
 	int len;
-	static char str[0xff], str_freq[0x20], str_power[0x6],
-		    str_stereo[0x4], str_rds[0x4];
+	static char str[0xff], str_freq[0x20], str_power[0x6], str_stereo[0x4];
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+	static char str_rds[0x4];
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 
 	if (*f_pos != 0) {
 		return 0;
@@ -355,8 +357,10 @@ static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 		unsigned int cmd, unsigned long arg)
 {
 	int data;
-	struct pcimaxfm_rds_set rds;
 	struct pcimaxfm_dev *dev = filp->private_data;
+#if PCIMAXFM_ENABLE_RDS
+	struct pcimaxfm_rds_set rds;
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 
 	switch (cmd) {
 		case PCIMAXFM_FREQ_SET:

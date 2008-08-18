@@ -1,4 +1,4 @@
-AC_INIT([pcimaxfm], [0.0.1], [daniel@stien.org], [pcimaxfm])
+AC_INIT([pcimaxfm], [0.1.0], [daniel@stien.org], [pcimaxfm])
 
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([include/config.h])
@@ -17,7 +17,7 @@ AC_DEFINE(
 
 AC_DEFINE(
   [PACKAGE_COPYRIGHT],
-  ["Copyright (C) 2007 "PACKAGE_AUTHOR],
+  ["Copyright (C) 2007-2008 "PACKAGE_AUTHOR],
   [Define the copyright string.]
 )
 
