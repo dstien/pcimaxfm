@@ -17,7 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <config.h>
 #include <pcimaxfm.h>
 
 #include <asm/uaccess.h>
@@ -32,7 +31,9 @@
 #include <linux/pci.h>
 #include <linux/types.h>
 
+#if PCIMAXFM_ENABLE_RDS
 #include "../../common/rds.h"
+#endif /* PCIMAXFM_ENABLE_RDS */
 
 #define KMSG(lvl, fmt, ...) \
 	printk(lvl PACKAGE ": " fmt "\n", ## __VA_ARGS__)
@@ -63,6 +64,9 @@ struct pcimaxfm_dev {
 
 	unsigned int freq;
 	unsigned int power;
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+	unsigned int rdssignal;
+#endif
 
 	unsigned int use_count;
 	spinlock_t use_lock;
@@ -183,6 +187,7 @@ static void pcimaxfm_write_freq_power(struct pcimaxfm_dev *dev,
 	KMSG_DEBUGN("Frequency: %d Power: %d", dev->freq, dev->power);
 }
 
+#if PCIMAXFM_ENABLE_RDS
 static void pcimaxfm_write_rds(struct pcimaxfm_dev *dev,
 		const char *parameter, const char *value)
 {
@@ -204,6 +209,21 @@ static void pcimaxfm_write_rds(struct pcimaxfm_dev *dev,
 
 	KMSG_DEBUGN("RDS: %s = \"%s\"", parameter, value);
 }
+
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+static void pcimaxfm_rdssignal_set(struct pcimaxfm_dev *dev, int signal)
+{
+	char valstr[2];
+
+	dev->rdssignal = signal ? 1 : 0;
+
+	valstr[0] = '0' + dev->rdssignal;
+	valstr[1] = '\0';
+
+	pcimaxfm_write_rds(dev, "PWR", valstr);
+}
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
+#endif /* PCIMAXFM_ENABLE_RDS */
 
 static void pcimaxfm_stereo_set(struct pcimaxfm_dev *dev, int stereo)
 {
@@ -269,7 +289,8 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 {
 	struct pcimaxfm_dev *dev = filp->private_data;
 	int len;
-	static char str[0xff], str_freq[0x20], str_power[0x6], str_stereo[0x4];
+	static char str[0xff], str_freq[0x20], str_power[0x6],
+		    str_stereo[0x4], str_rds[0x4];
 
 	if (*f_pos != 0) {
 		return 0;
@@ -297,16 +318,27 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 	snprintf(str_stereo, sizeof(str_stereo), "%s",
 			PCIMAXFM_STR_BOOL(pcimaxfm_stereo_get(dev)));
 
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+	snprintf(str_rds, sizeof(str_rds), "%s",
+			PCIMAXFM_STR_BOOL(dev->rdssignal));
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
+
 	snprintf(str, sizeof(str),
 			"Freq    : %s\n"
 			"Power   : %s\n"
 			"Stereo  : %s\n"
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+			"RDS     : %s\n"
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 			"\n"
 			"Address : %#lx\n"
 			"Control : %#x\n"
 			"Data    : %#x\n",
-			str_freq, str_power, str_stereo, dev->base_addr,
-			dev->io_ctrl, dev->io_data);
+			str_freq, str_power, str_stereo,
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+			str_rds,
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
+			dev->base_addr, dev->io_ctrl, dev->io_data);
 
 	len = strlen(str);
 
@@ -366,6 +398,22 @@ static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 
 			break;
 
+#if PCIMAXFM_ENABLE_RDS
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+		case PCIMAXFM_RDSSIGNAL_SET:
+			if (get_user(data, (int __user *)arg))
+				return -1;
+
+			pcimaxfm_rdssignal_set(dev, data);
+			break;
+
+		case PCIMAXFM_RDSSIGNAL_GET:
+			if (put_user(dev->rdssignal, (int __user *)arg))
+				return -1;
+
+			break;
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
+
 		case PCIMAXFM_RDS_SET:
 			if(copy_from_user(&rds,
 					(struct pcimaxfm_rds_set __user *)arg,
@@ -380,6 +428,7 @@ static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 			pcimaxfm_write_rds(dev,
 					rds_params_name[rds.param], rds.value);
 			break;
+#endif /* PCIMAXFM_ENABLE_RDS */
 
 		default:
 			return -ENOTTY;
@@ -414,6 +463,9 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 	dev->dev_num   = pcimaxfm_num_devs;
 	dev->freq      = PCIMAXFM_FREQ_NA;
 	dev->power     = PCIMAXFM_POWER_NA;
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+	dev->rdssignal = PCIMAXFM_BOOL_NA;
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE*/
 	dev->use_count = 0;
 	spin_lock_init(&dev->use_lock);
 

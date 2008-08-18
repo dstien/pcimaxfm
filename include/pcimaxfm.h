@@ -20,6 +20,8 @@
 #ifndef _PCIMAXFM_H
 #define _PCIMAXFM_H
 
+#include "config.h"
+
 #define PCIMAXFM_VENDOR			0xe159
 #define PCIMAXFM_DEVICE			0x0001
 #define PCIMAXFM_SUBVENDOR		0x4001
@@ -51,6 +53,8 @@
 #define PCIMAXFM_POWER_MAX		0x0F
 #define PCIMAXFM_POWER_NA		0x10
 
+#define PCIMAXFM_BOOL_NA		2
+
 #define PCIMAXFM_IOC_MAGIC	'+'
 #define PCIMAXFM_FREQ_SET	_IOR(PCIMAXFM_IOC_MAGIC, 2, int)
 #define PCIMAXFM_FREQ_GET	_IOW(PCIMAXFM_IOC_MAGIC, 3, int)
@@ -58,13 +62,20 @@
 #define PCIMAXFM_POWER_GET	_IOW(PCIMAXFM_IOC_MAGIC, 5, int)
 #define PCIMAXFM_STEREO_SET	_IOR(PCIMAXFM_IOC_MAGIC, 6, int)
 #define PCIMAXFM_STEREO_GET	_IOW(PCIMAXFM_IOC_MAGIC, 7, int)
-#define PCIMAXFM_RDS_SET	_IOR(PCIMAXFM_IOC_MAGIC, 9, struct pcimaxfm_rds_set *)
+
+#if PCIMAXFM_ENABLE_RDS
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+#define PCIMAXFM_RDSSIGNAL_SET	_IOR(PCIMAXFM_IOC_MAGIC, 8, int)
+#define PCIMAXFM_RDSSIGNAL_GET	_IOW(PCIMAXFM_IOC_MAGIC, 9, int)
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
+#define PCIMAXFM_RDS_SET	_IOR(PCIMAXFM_IOC_MAGIC, 10, struct pcimaxfm_rds_set *)
 
 struct pcimaxfm_rds_set {
 	int param;
 	char *value;
 };
+#endif /* PCIMAXFM_ENABLE_RDS */
 
-#define PCIMAXFM_STR_BOOL(val)	(val == 0 ? "Off" : "On")
+#define PCIMAXFM_STR_BOOL(val)	(val == 0 ? "Off" : (val == 1 ? "On" : "NA"))
 
 #endif /* _PCIMAXFM_H */

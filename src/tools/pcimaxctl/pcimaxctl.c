@@ -19,7 +19,6 @@
 
 #define _XOPEN_SOURCE 500
 
-#include <config.h>
 #include <pcimaxfm.h>
 
 #include <fcntl.h>
@@ -30,7 +29,9 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
+#if PCIMAXFM_ENABLE_RDS
 #include "../../common/rds.h"
+#endif /* PCIMAXFM_ENABLE_RDS */
 
 #define ERROR_MSG(format, ...) { if (verbosity >= 0) fprintf(stderr, "Error: " format "\n", ## __VA_ARGS__); exit(-1); }
 #define NOTICE_MSG(format, ...) if (verbosity >= 0) printf(format "\n", ## __VA_ARGS__)
@@ -43,16 +44,23 @@ int fd = 0;
 char *dev = "/dev/pcimaxfm0";
 
 static struct option long_options[] = {
-	{ "freq",     optional_argument, 0, 'f' },
-	{ "power",    optional_argument, 0, 'p' },
-	{ "stereo",   optional_argument, 0, 's' },
-	{ "rds",      required_argument, 0, 'r' },
-	{ "device",   optional_argument, 0, 'd' },
-	{ "verbose",  no_argument,       0, 'v' },
-	{ "quiet",    no_argument,       0, 'q' },
-	{ "version",  no_argument,       0, 'e' },
-	{ "help",     no_argument,       0, 'h' },
-	{ "help-rds", no_argument,       0, 'H' },
+	{ "freq",       optional_argument, 0, 'f' },
+	{ "power",      optional_argument, 0, 'p' },
+	{ "stereo",     optional_argument, 0, 's' },
+#if PCIMAXFM_ENABLE_RDS
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+	{ "rds-signal", optional_argument, 0, 'g' },
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
+	{ "rds",        required_argument, 0, 'r' },
+#endif /* PCIMAXFM_ENABLE_RDS */
+	{ "device",     optional_argument, 0, 'd' },
+	{ "verbose",    no_argument,       0, 'v' },
+	{ "quiet",      no_argument,       0, 'q' },
+	{ "version",    no_argument,       0, 'e' },
+	{ "help",       no_argument,       0, 'h' },
+#if PCIMAXFM_ENABLE_RDS
+	{ "help-rds",   no_argument,       0, 'H' },
+#endif /* PCIMAXFM_ENABLE_RDS */
 	{ 0, 0, 0, 0 }
 };
 
@@ -77,20 +85,28 @@ void print_help(char *prog, int status)
 	printf("                          or 50 KHz steps (%d-%d)\n", PCIMAXFM_FREQ_MIN, PCIMAXFM_FREQ_MAX);
 	printf("-p, --power[=LVL]         get/set power level (%d-%d)\n", PCIMAXFM_POWER_MIN, PCIMAXFM_POWER_MAX);
 	printf("-s, --stereo[=1|0]        get/toggle stereo encoder (1 = on, 0 = off)\n");
+#if PCIMAXFM_ENABLE_RDS
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+	printf("-g, --rds-signal[=1|0]    get/toggle RDS signal (1 = on, 0 = off)\n");
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 	printf("-r, --rds=PARM=VAL[,...]  set RDS parameters (see --help-rds)\n\n");
+#endif /* PCIMAXFM_ENABLE_RDS */
 
 	printf("-d, --device[=FILE]       pcimaxfm device (default: /dev/pcimaxfm0)\n");
 	printf("-v, --verbose             verbose output\n");
 	printf("-q, --quiet               no output\n");
 	printf("-e, --version             print version and exit\n");
 	printf("-h, --help                print this text and exit\n");
+#if PCIMAXFM_ENABLE_RDS
 	printf("-H, --help-rds            print list of valid RDS parameters\n\n");
+#endif /* PCIMAXFM_ENABLE_RDS */
 
 	printf("Report bugs to <"PACKAGE_BUGREPORT">.\n");
 
 	exit(status);
 }
 
+#if PCIMAXFM_ENABLE_RDS
 void print_help_rds(int status)
 {
 	int i;
@@ -118,6 +134,7 @@ void print_help_rds(int status)
 
 	exit(status);
 }
+#endif /* PCIMAXFM_ENABLE_RDS */
 
 void dev_open()
 {
@@ -216,11 +233,7 @@ void stereo(char *arg)
 
 	dev_open();
 	if (arg) {
-		if (sscanf(arg, "%u", &stereo) < 1) {
-			ERROR_MSG("Invalid stereo encoder state. Got \"%s\", expected integer 1 or 0.", arg);
-		}
-
-		if (stereo < 0 || stereo > 1) {
+		if (sscanf(arg, "%u", &stereo) < 1 || stereo < 0 || stereo > 1) {
 			ERROR_MSG("Invalid stereo encoder state. Got \"%s\", expected integer 1 or 0.", arg);
 		}
 
@@ -235,6 +248,31 @@ void stereo(char *arg)
 
 	NOTICE_MSG("Stereo encoder: %s", PCIMAXFM_STR_BOOL(stereo));
 }
+
+#if PCIMAXFM_ENABLE_RDS
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+void rds_signal(char *arg)
+{
+	int signal;
+
+	dev_open();
+	if (arg) {
+		if (sscanf(arg, "%u", &signal) < 1 || signal < 0 || signal > 1) {
+			ERROR_MSG("Invalid RDS signal state. Got \"%s\", expected integer 1 or 0.", arg);
+		}
+
+		if (ioctl(fd, PCIMAXFM_RDSSIGNAL_SET, &signal) == -1) {
+			ERROR_MSG("Setting RDS signal state failed.");
+		}
+	} else {
+		if (ioctl(fd, PCIMAXFM_RDSSIGNAL_GET, &signal) == -1) {
+			ERROR_MSG("Reading RDS signal state failed.");
+		}
+	}
+
+	NOTICE_MSG("RDS signal: %s", PCIMAXFM_STR_BOOL(signal));
+}
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 
 void rds(char *arg)
 {
@@ -265,6 +303,7 @@ void rds(char *arg)
 				rds_params_name[rds_set.param], rds_set.value);
 	}
 }
+#endif /* PCIMAXFM_ENABLE_RDS */
 
 void device(char *arg)
 {
@@ -290,7 +329,15 @@ int main(int argc, char **argv)
 	while (1) {
 		option_index = 0;
 
-		c = getopt_long(argc, argv, "f::p::s::r:d::vqehH", long_options, &option_index);
+		c = getopt_long(argc, argv,
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+				"f::p::s::g::r:d::vqehH",
+#elif PCIMAXFM_ENABLE_RDS
+				"f::p::s::r:d::vqehH",
+#else
+				"f::p::s::d::vqehH",
+#endif
+				long_options, &option_index);
 
 		if (c == -1)
 			break;
@@ -305,9 +352,16 @@ int main(int argc, char **argv)
 			case 's':
 				stereo(optarg);
 				break;
+#if PCIMAXFM_ENABLE_RDS
+#if PCIMAXFM_ENABLE_RDS_TOGGLE
+			case 'g':
+				rds_signal(optarg);
+				break;
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 			case 'r':
 				rds(optarg);
 				break;
+#endif /* PCIMAXFM_ENABLE_RDS */
 			case 'd':
 				device(optarg);
 				break;
@@ -322,8 +376,10 @@ int main(int argc, char **argv)
 				print_version(argv[0]);
 			case 'h':
 				print_help(argv[0], 0);
+#if PCIMAXFM_ENABLE_RDS
 			case 'H':
 				print_help_rds(0);
+#endif /* PCIMAXFM_ENABLE_RDS */
 			default:
 				exit(1);
 		}

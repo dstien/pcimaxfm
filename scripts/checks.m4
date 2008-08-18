@@ -28,12 +28,21 @@ AC_DEFUN([PCIMAXFM_WITH_VERSION],
     AC_ARG_WITH([version],
       AS_HELP_STRING([--with-version=200X], [Device version 2004/2005/2006/2007 @<:@2007@:>@]),
       [
-        if test $withval = "2004" -o $withval = "2005" -o $withval = "2006"; then
+        if test $withval = "2004" -o $withval = "2005"; then
           dev_ver=$withval
           inv_stereo=1
+          rds=0
+          rds_signal=0
+        elif test $withval = "2006"; then
+          dev_ver=$withval
+          inv_stereo=1
+          rds=1
+          rds_signal=0
         elif test $withval = "2007"; then
           dev_ver=$withval
           inv_stereo=0
+          rds=1
+          rds_signal=1
         else
           AC_MSG_ERROR([
 *** Unsupported device version. Value of --with-version must be
@@ -44,10 +53,14 @@ AC_DEFUN([PCIMAXFM_WITH_VERSION],
       [
         dev_ver="2007"
         inv_stereo=0
+        rds=1
+        rds_signal=1
       ]
     )
 
     AC_DEFINE_UNQUOTED([PCIMAXFM_DEVICE_VERSION], ["$dev_ver"], [Device version.])
     AC_DEFINE_UNQUOTED([PCIMAXFM_INVERT_STEREO], [$inv_stereo], [Invert stereo encoder state flag.])
+    AC_DEFINE_UNQUOTED([PCIMAXFM_ENABLE_RDS], [$rds], [Enable RDS encoder.])
+    AC_DEFINE_UNQUOTED([PCIMAXFM_ENABLE_RDS_TOGGLE], [$rds_signal], [Enable RDS signal toggle.])
   ]
 )
