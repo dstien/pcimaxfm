@@ -30,16 +30,19 @@ AC_DEFUN([PCIMAXFM_WITH_VERSION],
       [
         if test $withval = "2004" -o $withval = "2005"; then
           dev_ver=$withval
+	  tx=1
           inv_stereo=1
           rds=0
           rds_signal=0
         elif test $withval = "2006"; then
           dev_ver=$withval
+	  tx=0
           inv_stereo=1
           rds=1
           rds_signal=0
         elif test $withval = "2007"; then
           dev_ver=$withval
+	  tx=0
           inv_stereo=0
           rds=1
           rds_signal=1
@@ -52,6 +55,7 @@ AC_DEFUN([PCIMAXFM_WITH_VERSION],
       ],
       [
         dev_ver="2007"
+	tx=0
         inv_stereo=0
         rds=1
         rds_signal=1
@@ -59,6 +63,7 @@ AC_DEFUN([PCIMAXFM_WITH_VERSION],
     )
 
     AC_DEFINE_UNQUOTED([PCIMAXFM_DEVICE_VERSION], ["$dev_ver"], [Device version.])
+    AC_DEFINE_UNQUOTED([PCIMAXFM_ENABLE_TX_TOGGLE], [$tx], [Enable transmitter power toggle.])
     AC_DEFINE_UNQUOTED([PCIMAXFM_INVERT_STEREO], [$inv_stereo], [Invert stereo encoder state flag.])
     AC_DEFINE_UNQUOTED([PCIMAXFM_ENABLE_RDS], [$rds], [Enable RDS encoder.])
     AC_DEFINE_UNQUOTED([PCIMAXFM_ENABLE_RDS_TOGGLE], [$rds_signal], [Enable RDS signal toggle.])

@@ -44,6 +44,9 @@ int fd = 0;
 char *dev = "/dev/pcimaxfm0";
 
 static struct option long_options[] = {
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+	{ "tx",         optional_argument, 0, 't' },
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
 	{ "freq",       optional_argument, 0, 'f' },
 	{ "power",      optional_argument, 0, 'p' },
 	{ "stereo",     optional_argument, 0, 's' },
@@ -81,6 +84,9 @@ void print_help(char *prog, int status)
 	printf("Control PCI MAX FM transmitter devices.\n\n");
 
 	printf("Omitting optional arguments will print current value.\n");
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+	printf("-t, --tx[=1|0]            get/toggle transmitter power (1 = on, 0 = off)\n");
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
 	printf("-f, --freq[=MHz|50KHz]    get/set frequency in MHz (%.2f-%.2f)\n", FREQ(PCIMAXFM_FREQ_MIN), FREQ(PCIMAXFM_FREQ_MAX));
 	printf("                          or 50 KHz steps (%d-%d)\n", PCIMAXFM_FREQ_MIN, PCIMAXFM_FREQ_MAX);
 	printf("-p, --power[=LVL]         get/set power level (%d-%d)\n", PCIMAXFM_POWER_MIN, PCIMAXFM_POWER_MAX);
@@ -153,6 +159,30 @@ void dev_close()
 	if (fd)
 		close(fd);
 }
+
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+void tx(char *arg)
+{
+	int tx;
+
+	dev_open();
+	if (arg) {
+		if (sscanf(arg, "%u", &tx) < 1 || tx < 0 || tx > 1) {
+			ERROR_MSG("Invalid transmitter power state. Got \"%s\", expected integer 1 or 0.", arg);
+		}
+
+		if (ioctl(fd, PCIMAXFM_TX_SET, &tx) == -1) {
+			ERROR_MSG("Setting transmitter power state failed.");
+		}
+	} else {
+		if (ioctl(fd, PCIMAXFM_TX_GET, &tx) == -1) {
+			 ERROR_MSG("Reading transmitter power state failed.");
+		}
+	}
+
+	NOTICE_MSG("Transmitter: %s", PCIMAXFM_STR_BOOL(tx));
+}
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
 
 void freq(const char *arg)
 {
@@ -332,19 +362,28 @@ int main(int argc, char **argv)
 		option_index = 0;
 
 		c = getopt_long(argc, argv,
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+				"t::"
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+				"f::p::s::"
+#if PCIMAXFM_ENABLE_RDS
 #if PCIMAXFM_ENABLE_RDS_TOGGLE
-				"f::p::s::g::r:d::vqehH",
-#elif PCIMAXFM_ENABLE_RDS
-				"f::p::s::r:d::vqehH",
-#else
-				"f::p::s::d::vqehH",
-#endif
+				"g::"
+#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
+				"r:"
+#endif /* PCIMAXFM_ENABLE_RDS */
+				"d::vqehH",
 				long_options, &option_index);
 
 		if (c == -1)
 			break;
 
 		switch (c) {
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+			case 't':
+				tx(optarg);
+				break;
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
 			case 'f':
 				freq(optarg);
 				break;

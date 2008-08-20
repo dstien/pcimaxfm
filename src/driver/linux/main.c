@@ -225,6 +225,24 @@ static void pcimaxfm_rdssignal_set(struct pcimaxfm_dev *dev, int signal)
 #endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 #endif /* PCIMAXFM_ENABLE_RDS */
 
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+static void pcimaxfm_tx_set(struct pcimaxfm_dev *dev, int tx)
+{
+	if (tx) {
+		dev->io_data |= PCIMAXFM_TX;
+	} else {
+		dev->io_data &= ~PCIMAXFM_TX;
+	}
+
+	outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_DATA);
+}
+
+static int pcimaxfm_tx_get(struct pcimaxfm_dev *dev)
+{
+	return (dev->io_data & PCIMAXFM_TX) == PCIMAXFM_TX;
+}
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+
 static void pcimaxfm_stereo_set(struct pcimaxfm_dev *dev, int stereo)
 {
 #if PCIMAXFM_INVERT_STEREO
@@ -289,10 +307,7 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 {
 	struct pcimaxfm_dev *dev = filp->private_data;
 	int len;
-	static char str[0xff], str_freq[0x20], str_power[0x6], str_stereo[0x4];
-#if PCIMAXFM_ENABLE_RDS_TOGGLE
-	static char str_rds[0x4];
-#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
+	static char str[0xff], str_freq[0x20], str_power[0x6];
 
 	if (*f_pos != 0) {
 		return 0;
@@ -317,15 +332,10 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 				dev->power, PCIMAXFM_POWER_MAX);
 	}
 
-	snprintf(str_stereo, sizeof(str_stereo), "%s",
-			PCIMAXFM_STR_BOOL(pcimaxfm_stereo_get(dev)));
-
-#if PCIMAXFM_ENABLE_RDS_TOGGLE
-	snprintf(str_rds, sizeof(str_rds), "%s",
-			PCIMAXFM_STR_BOOL(dev->rdssignal));
-#endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
-
 	snprintf(str, sizeof(str),
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+			"TX      : %s\n"
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
 			"Freq    : %s\n"
 			"Power   : %s\n"
 			"Stereo  : %s\n"
@@ -336,9 +346,13 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 			"Address : %#lx\n"
 			"Control : %#x\n"
 			"Data    : %#x\n",
-			str_freq, str_power, str_stereo,
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+			 PCIMAXFM_STR_BOOL(pcimaxfm_tx_get(dev)),
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+			str_freq, str_power,
+			PCIMAXFM_STR_BOOL(pcimaxfm_stereo_get(dev)),
 #if PCIMAXFM_ENABLE_RDS_TOGGLE
-			str_rds,
+			PCIMAXFM_STR_BOOL(dev->rdssignal),
 #endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 			dev->base_addr, dev->io_ctrl, dev->io_data);
 
@@ -363,6 +377,22 @@ static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 #endif /* PCIMAXFM_ENABLE_RDS_TOGGLE */
 
 	switch (cmd) {
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+		case PCIMAXFM_TX_SET:
+			if (get_user(data, (int __user *)arg))
+				return -1;
+
+			pcimaxfm_tx_set(dev, data);
+			break;
+
+		case PCIMAXFM_TX_GET:
+			if (put_user(pcimaxfm_tx_get(dev),
+						(int __user *)arg))
+				return -1;
+
+			break;
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+
 		case PCIMAXFM_FREQ_SET:
 			if (get_user(data, (int __user *)arg))
 				return -1;
@@ -510,9 +540,14 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 	KMSG_INFON("Found card %s, base address %#lx",
 			pci_name(pci_dev), dev->base_addr);
 
-	/* Get stereo encoder state if its control line is already enabled. */
+	/* Get TX and stereo encoder state if their control lines are
+	 * already enabled. */
 	dev->io_ctrl =
-		inb(dev->base_addr + PCIMAXFM_OFFSET_CTRL) & PCIMAXFM_MONO;
+		inb(dev->base_addr + PCIMAXFM_OFFSET_CTRL) & (
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+				PCIMAXFM_TX |
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+				PCIMAXFM_MONO);
 
 	if ((dev->io_ctrl & PCIMAXFM_MONO) == PCIMAXFM_MONO) {
 		dev->io_data = inb(dev->base_addr + PCIMAXFM_OFFSET_DATA)
@@ -521,8 +556,19 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 		dev->io_data = 0;
 	}
 
-	/* Enable stereo encoder control and I2C. */
-	dev->io_ctrl |= (PCIMAXFM_MONO | PCIMAXFM_I2C_SDA | PCIMAXFM_I2C_SCL);
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+	if ((dev->io_ctrl & PCIMAXFM_TX) == PCIMAXFM_TX) {
+		dev->io_data |= inb(dev->base_addr + PCIMAXFM_OFFSET_DATA)
+			& PCIMAXFM_TX;
+	}
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+
+	/* Enable TX, stereo encoder control and I2C. */
+	dev->io_ctrl |= (
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+			PCIMAXFM_TX |
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+			PCIMAXFM_MONO | PCIMAXFM_I2C_SDA | PCIMAXFM_I2C_SCL);
 	outb(dev->io_ctrl, dev->base_addr + PCIMAXFM_OFFSET_CTRL);
 
 	return 0;
@@ -546,11 +592,19 @@ static void __devexit pcimaxfm_remove(struct pci_dev *pci_dev)
 	if (dev == NULL) {
 		KMSG_ERR("Couldn't find PCI driver data for removal.");
 	} else {
-		/* Disable everything but stereo encoder state. */
-		dev->io_ctrl &= PCIMAXFM_MONO;
+		/* Disable everything but TX and stereo encoder state. */
+		dev->io_ctrl &= (
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+				PCIMAXFM_TX |
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+				PCIMAXFM_MONO);
 		outb(dev->io_ctrl, dev->base_addr + PCIMAXFM_OFFSET_CTRL);
 
-		dev->io_data &= PCIMAXFM_MONO;
+		dev->io_data &= (
+#if PCIMAXFM_ENABLE_TX_TOGGLE
+				PCIMAXFM_TX |
+#endif /* PCIMAXFM_ENABLE_TX_TOGGLE */
+				PCIMAXFM_MONO);
 		outb(dev->io_data, dev->base_addr + PCIMAXFM_OFFSET_DATA);
 
 		release_region(dev->base_addr, PCIMAXFM_REGION_LENGTH);
