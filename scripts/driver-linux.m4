@@ -32,6 +32,27 @@ AC_DEFUN([PCIMAXFM_PATH_LINUX_HEADERS],
   ]
 )
 
+dnl Check Linux kernel version.
+dnl ---------------------------------------------------------------------------
+
+AC_DEFUN([PCIMAXFM_CHECK_LINUX_VERSION],
+  [
+    AC_MSG_CHECKING([for Linux kernel version >= 2.6])
+
+    AC_COMPILE_IFELSE(
+      [[#include "]]$KERNEL_DIR[[/include/linux/version.h"
+        #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+        #error "Unsupported version"
+        #endif
+      ]],
+      AC_MSG_RESULT([yes]),
+      AC_MSG_ERROR([
+*** Linux kernel version >= 2.6 required.
+      ])
+    )
+  ]
+)
+
 dnl Set Linux kernel module path.
 dnl ---------------------------------------------------------------------------
 
