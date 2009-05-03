@@ -14,3 +14,5 @@ MAINTAINERCLEANFILES = \
 	depcomp \
 	install-sh \
 	missing
+
+ACLOCAL_AMFLAGS = -I scripts

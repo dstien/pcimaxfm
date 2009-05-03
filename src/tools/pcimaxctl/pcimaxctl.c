@@ -1,6 +1,6 @@
 /*
  * pcimaxfm - PCI MAX FM transmitter driver and tools
- * Copyright (C) 2007-2008 Daniel Stien <daniel@stien.org>
+ * Copyright (C) 2007-2009 Daniel Stien <daniel@stien.org>
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

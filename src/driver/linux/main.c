@@ -1,6 +1,6 @@
 /*
  * pcimaxfm - PCI MAX FM transmitter driver and tools
- * Copyright (C) 2007-2008 Daniel Stien <daniel@stien.org>
+ * Copyright (C) 2007-2009 Daniel Stien <daniel@stien.org>
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -530,11 +530,11 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 		goto err_cdev_add;
 	}
 
-	if (IS_ERR(class_device_create(pcimaxfm_class, NULL, dev_t, NULL,
-					PACKAGE "%d", dev->dev_num))) {
+	if (IS_ERR(device_create(pcimaxfm_class, NULL, dev_t, NULL,
+				PACKAGE "%d", dev->dev_num))) {
 		KMSG_ERRN("Couldn't create class device.");
 		ret = -1;
-		goto err_class_device_create;
+		goto err_device_create;
 	}
 
 	KMSG_INFON("Found card %s, base address %#lx",
@@ -573,7 +573,7 @@ static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
 
 	return 0;
 
-err_class_device_create:
+err_device_create:
 	cdev_del(&dev->cdev);
 err_cdev_add:
 	release_region(dev->base_addr, PCIMAXFM_REGION_LENGTH);
@@ -609,7 +609,7 @@ static void __devexit pcimaxfm_remove(struct pci_dev *pci_dev)
 
 		release_region(dev->base_addr, PCIMAXFM_REGION_LENGTH);
 		cdev_del(&dev->cdev);
-		class_device_destroy(pcimaxfm_class,
+		device_destroy(pcimaxfm_class,
 				MKDEV(pcimaxfm_major, dev->dev_num));
 	}
 
