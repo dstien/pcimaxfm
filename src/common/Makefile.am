@@ -3,7 +3,11 @@ MAINTAINERCLEANFILES = \
 
 noinst_LIBRARIES = libcommon.a
 
-libcommon_a_CFLAGS = -fno-builtin -mcmodel=kernel
+libcommon_a_CFLAGS = -fno-builtin
+
+if IS_X86_64
+libcommon_a_CFLAGS += -mcmodel=kernel
+endif
 
 libcommon_a_SOURCES = \
 	rds.c \

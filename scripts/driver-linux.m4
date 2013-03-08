@@ -1,3 +1,16 @@
+dnl Check target architecture
+dnl ---------------------------------------------------------------------------
+
+AC_DEFUN([PCIMAXFM_CHECK_ARCH],
+  [
+    AC_MSG_CHECKING([target architecture])
+    ARCH=`uname -m`
+    AC_MSG_RESULT($ARCH)
+
+    AM_CONDITIONAL(IS_X86_64, [test "$ARCH" = "x86_64"])
+  ]
+)
+
 dnl Set Linux kernel headers path.
 dnl ---------------------------------------------------------------------------
 
