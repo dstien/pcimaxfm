@@ -1,4 +1,4 @@
-AC_INIT([pcimaxfm], [0.1.0], [daniel@stien.org], [pcimaxfm])
+AC_INIT([pcimaxfm], [0.1.1], [daniel@stien.org], [pcimaxfm])
 
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER([include/config.h])
