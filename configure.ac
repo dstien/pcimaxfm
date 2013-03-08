@@ -17,7 +17,7 @@ AC_DEFINE(
 
 AC_DEFINE(
   [PACKAGE_COPYRIGHT],
-  ["Copyright (C) 2007-2009 "PACKAGE_AUTHOR],
+  ["Copyright (C) 2007-2013 "PACKAGE_AUTHOR],
   [Define the copyright string.]
 )
 
