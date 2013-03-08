@@ -367,8 +367,8 @@ static ssize_t pcimaxfm_read(struct file *filp, char __user *buf, size_t count,
 	return len;
 }
 
-static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
-		unsigned int cmd, unsigned long arg)
+static long pcimaxfm_ioctl(struct file *filp, unsigned int cmd,
+		unsigned long arg)
 {
 	int data;
 	struct pcimaxfm_dev *dev = filp->private_data;
@@ -472,14 +472,14 @@ static int pcimaxfm_ioctl(struct inode *inode, struct file *filp,
 }
 
 static struct file_operations pcimaxfm_fops = {
-	.owner   = THIS_MODULE,
-	.read    = pcimaxfm_read,
-	.ioctl   = pcimaxfm_ioctl,
-	.open    = pcimaxfm_open,
-	.release = pcimaxfm_release
+	.owner          = THIS_MODULE,
+	.read           = pcimaxfm_read,
+	.unlocked_ioctl = pcimaxfm_ioctl,
+	.open           = pcimaxfm_open,
+	.release        = pcimaxfm_release
 };
 
-static int __devinit pcimaxfm_probe(struct pci_dev *pci_dev,
+static int pcimaxfm_probe(struct pci_dev *pci_dev,
 		const struct pci_device_id *id)
 {
 	int ret;
@@ -585,7 +585,7 @@ err_pci_enable_device:
 	return ret;
 }
 
-static void __devexit pcimaxfm_remove(struct pci_dev *pci_dev)
+static void pcimaxfm_remove(struct pci_dev *pci_dev)
 {
 	struct pcimaxfm_dev *dev = pci_get_drvdata(pci_dev);
 
@@ -617,7 +617,7 @@ static void __devexit pcimaxfm_remove(struct pci_dev *pci_dev)
 	pci_dev_put(pci_dev);
 }
 
-static struct __devinitdata pci_device_id pcimaxfm_id_table[] = {
+static DEFINE_PCI_DEVICE_TABLE(pcimaxfm_id_table) = {
 	{
 		.vendor    = PCIMAXFM_VENDOR,
 		.device    = PCIMAXFM_DEVICE,
@@ -630,7 +630,7 @@ static struct pci_driver pcimaxfm_driver = {
 	.name     = PACKAGE,
 	.id_table = pcimaxfm_id_table,
 	.probe    = pcimaxfm_probe,
-	.remove   = __devexit_p(pcimaxfm_remove)
+	.remove   = pcimaxfm_remove
 };
 
 static int __init pcimaxfm_init(void)
