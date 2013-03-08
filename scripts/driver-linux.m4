@@ -39,12 +39,14 @@ AC_DEFUN([PCIMAXFM_CHECK_LINUX_VERSION],
   [
     AC_MSG_CHECKING([for Linux kernel version >= 2.6.26])
 
-    AC_COMPILE_IFELSE(
-      [[#include "]]$KERNEL_DIR[[/include/linux/version.h"
-        #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
-        #error "Unsupported version"
-        #endif
-      ]],
+    AC_COMPILE_IFELSE([
+      AC_LANG_SOURCE(
+        [[#include "]]$KERNEL_DIR[[/include/linux/version.h"
+          #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
+          #error "Unsupported version"
+          #endif
+        ]]
+      )],
       AC_MSG_RESULT([yes]),
       AC_MSG_ERROR([
 *** Linux kernel version >= 2.6.26 required.
