@@ -22,17 +22,12 @@ AC_DEFUN([PCIMAXFM_PATH_LINUX_HEADERS],
     defaultdir2="/usr/src/linux"
     defaultdir3="$defaultdir2-`uname -r`"
 
-    if test -d $defaultdir1 -o -L $defaultdir1; then
+    if test -d "$defaultdir1" -o -L "$defaultdir1"; then
       detecteddir=$defaultdir1
-    elif test -d $defaultdir2 -o -L $defaultdir2; then
+    elif test -d "$defaultdir2" -o -L "$defaultdir2"; then
       detecteddir=$defaultdir2
-    elif test -d $defaultdir3 -o -L $defaultdir3; then
+    elif test -d "$defaultdir3" -o -L "$defaultdir3"; then
       detecteddir=$defaultdir3
-    else
-      AC_MSG_ERROR([
-*** Linux kernel headers not found.
-*** Set the path manually by using --with-kerneldir=DIR.
-      ])
     fi
 
     AC_ARG_WITH([kerneldir],
@@ -40,6 +35,14 @@ AC_DEFUN([PCIMAXFM_PATH_LINUX_HEADERS],
       [KERNEL_DIR=$withval],
       [KERNEL_DIR=$detecteddir]
     )
+
+    if test ! -d "$KERNEL_DIR" -a ! -L "$KERNEL_DIR"; then
+      AC_MSG_ERROR([
+*** Linux kernel headers not found.
+*** Set the path manually by using --with-kerneldir=DIR.
+      ])
+    fi
+
     AC_SUBST(KERNEL_DIR)
     AC_MSG_RESULT($KERNEL_DIR)
   ]
@@ -75,19 +78,21 @@ AC_DEFUN([PCIMAXFM_PATH_LINUX_MODULE],
   [
     AC_MSG_CHECKING([for Linux module directory])
 
-    defaultdir="/lib/modules/`uname -r`"
-    if test ! -d $defaultdir -a ! -L $defaultdir; then
+    defaultdir="/lib/modules/`uname -r`/extra"
+
+    AC_ARG_WITH([moduledir],
+      AS_HELP_STRING([--with-moduledir=DIR], [Linux modules install path]),
+      [MODULE_DIR=$withval],
+      [MODULE_DIR=$defaultdir]
+    )
+
+    if test ! -d "$MODULE_DIR" -a ! -L "$MODULE_DIR"; then
       AC_MSG_ERROR([
 *** Linux kernel module install directory not found.
 *** Set the path manually by using --with-moduledir=DIR.
       ])
     fi
 
-    AC_ARG_WITH([moduledir],
-      AS_HELP_STRING([--with-moduledir=DIR], [Linux modules install path]),
-      [MODULE_DIR=$withval],
-      [MODULE_DIR="$defaultdir/extra"]
-    )
     AC_SUBST(MODULE_DIR)
     AC_MSG_RESULT($MODULE_DIR)
   ]

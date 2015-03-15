@@ -30,19 +30,19 @@ AC_DEFUN([PCIMAXFM_WITH_VERSION],
       [
         if test $withval = "2004" -o $withval = "2005"; then
           dev_ver=$withval
-	  tx=1
+          tx=1
           inv_stereo=1
           rds=0
           rds_signal=0
         elif test $withval = "2006"; then
           dev_ver=$withval
-	  tx=0
+          tx=0
           inv_stereo=1
           rds=1
           rds_signal=0
         elif test $withval = "2007"; then
           dev_ver=$withval
-	  tx=0
+          tx=0
           inv_stereo=0
           rds=1
           rds_signal=1
@@ -55,7 +55,7 @@ AC_DEFUN([PCIMAXFM_WITH_VERSION],
       ],
       [
         dev_ver="2007"
-	tx=0
+        tx=0
         inv_stereo=0
         rds=1
         rds_signal=1
